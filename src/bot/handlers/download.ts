@@ -4,6 +4,7 @@ import { extractMediaUrl } from '../middlewares/urlDetector.js';
 import { downloaderService, downloadQueue } from '../../services/downloaderService.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { downloadRepository } from '../../database/repositories/downloadRepository.js';
+import { escapeHtml } from '../../utils/format.js';
 
 export const downloadComposer = new Composer<MyContext>();
 
@@ -51,17 +52,17 @@ downloadComposer.on('message:text', async (ctx, next) => {
   const effectiveLimit = userRepository.getEffectiveLimit(user);
   if (user.daily_usage >= effectiveLimit) {
     await ctx.reply(
-      `⚠️ **Kuota Harian Anda Telah Habis!**\n\n` +
-      `Anda telah mencapai batas **${effectiveLimit} unduhan** hari ini.\n` +
+      `⚠️ <b>Kuota Harian Anda Telah Habis!</b>\n\n` +
+      `Anda telah mencapai batas <b>${effectiveLimit} unduhan</b> hari ini.\n` +
       `Kuota akan direset otomatis setiap pukul 00:00 WIB.\n\n` +
-      `💡 *Gunakan perintah /ref untuk mengajak teman dan mendapatkan kuota tambahan, atau kirim bukti transfer untuk upgrade ke VIP.*`,
-      { parse_mode: 'Markdown' }
+      `💡 <i>Gunakan perintah /ref untuk mengajak teman dan mendapatkan kuota tambahan, atau kirim bukti transfer untuk upgrade ke VIP.</i>`,
+      { parse_mode: 'HTML' }
     );
     return;
   }
 
   // 2. Kirim pesan live status awal
-  const statusMsg = await ctx.reply('🔍 **Memeriksa tautan media...**', { parse_mode: 'Markdown' });
+  const statusMsg = await ctx.reply('🔍 <b>Memeriksa tautan media...</b>', { parse_mode: 'HTML' });
 
   try {
     // 3. Ekstraksi info awal & pre-check ukuran file
@@ -85,11 +86,11 @@ downloadComposer.on('message:text', async (ctx, next) => {
       await ctx.api.editMessageText(
         ctx.chat.id,
         statusMsg.message_id,
-        `⚠️ **Peringatan Batas Ukuran:**\n\n` +
-        `📹 **Judul:** ${info.title}\n` +
-        `📦 **Estimasi Ukuran:** ~${info.filesizeApproxMb} MB\n\n` +
+        `⚠️ <b>Peringatan Batas Ukuran:</b>\n\n` +
+        `📹 <b>Judul:</b> ${escapeHtml(info.title)}\n` +
+        `📦 <b>Estimasi Ukuran:</b> ~${info.filesizeApproxMb} MB\n\n` +
         `Telegram Bot API membatasi upload maksimal 50 MB. Video ini tidak dapat diunggah sebagai video utuh, namun Anda dapat mengunduh versi audionya:`,
-        { reply_markup: keyboard, parse_mode: 'Markdown' }
+        { reply_markup: keyboard, parse_mode: 'HTML' }
       );
       return;
     }
@@ -107,23 +108,24 @@ downloadComposer.on('message:text', async (ctx, next) => {
         .text('🎧 Audio MP3', `dl:${requestId}:audio`);
     }
 
-    const durationStr = info.duration ? `\n⏱ **Durasi:** ${Math.floor(info.duration / 60)}m ${info.duration % 60}s` : '';
-    const sizeStr = info.filesizeApproxMb && info.filesizeApproxMb > 0 ? `\n📦 **Estimasi:** ~${info.filesizeApproxMb} MB` : '';
+    const durationStr = info.duration ? `\n⏱ <b>Durasi:</b> ${Math.floor(info.duration / 60)}m ${info.duration % 60}s` : '';
+    const sizeStr = info.filesizeApproxMb && info.filesizeApproxMb > 0 ? `\n📦 <b>Estimasi:</b> ~${info.filesizeApproxMb} MB` : '';
 
     await ctx.api.editMessageText(
       ctx.chat.id,
       statusMsg.message_id,
-      `🎥 **Media Ditemukan:**\n` +
-      `📌 **Judul:** ${info.title}${durationStr}${sizeStr}\n` +
-      `🌐 **Platform:** ${info.platform.toUpperCase()}\n\n` +
+      `🎥 <b>Media Ditemukan:</b>\n` +
+      `📌 <b>Judul:</b> ${escapeHtml(info.title)}${durationStr}${sizeStr}\n` +
+      `🌐 <b>Platform:</b> ${info.platform.toUpperCase()}\n\n` +
       `Silakan pilih format yang ingin diunduh:`,
-      { reply_markup: keyboard, parse_mode: 'Markdown' }
+      { reply_markup: keyboard, parse_mode: 'HTML' }
     );
   } catch (err: any) {
     await ctx.api.editMessageText(
       ctx.chat.id,
       statusMsg.message_id,
-      `❌ **Gagal memproses link:**\n${err.message || 'Tautan tidak valid atau media diprivat.'}`
+      `❌ <b>Gagal memproses link:</b>\n${escapeHtml(err.message || 'Tautan tidak valid atau media diprivat.')}`,
+      { parse_mode: 'HTML' }
     ).catch(() => {});
   }
 });
@@ -158,15 +160,15 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
 
   let queueNote = '';
   if (activeCount >= 2 || pendingQueueCount > 0) {
-    queueNote = '\n*(Server sedang memproses unduhan lain, Anda berada dalam antrean...)*';
+    queueNote = '\n<i>(Server sedang memproses unduhan lain, Anda berada dalam antrean...)</i>';
   }
 
   // Update status: Menunggu antrean / Mulai mengunduh
   await ctx.api.editMessageText(
     chatId,
     statusMsgId,
-    `⏳ **[1/3] Menyiapkan Pengunduhan...**${queueNote}`,
-    { parse_mode: 'Markdown', reply_markup: undefined }
+    `⏳ <b>[1/3] Menyiapkan Pengunduhan...</b>${queueNote}`,
+    { parse_mode: 'HTML', reply_markup: undefined }
   ).catch(() => {});
 
   let downloadResult: any = null;
@@ -180,37 +182,68 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
       await ctx.api.editMessageText(
         chatId,
         statusMsgId,
-        `⬇️ **[2/3] Mengunduh media dari ${pending.platform.toUpperCase()}...**\n*(Harap tunggu, proses ini membutuhkan waktu beberapa detik)*`,
-        { parse_mode: 'Markdown' }
+        `⬇️ <b>[2/3] Mengunduh media dari ${pending.platform.toUpperCase()}...</b>\n<i>(Harap tunggu, proses ini membutuhkan waktu beberapa detik)</i>`,
+        { parse_mode: 'HTML' }
       ).catch(() => {});
     }, 1500);
 
     downloadResult = await downloadPromise;
 
+    // Cek batas upload Telegram Bot API (50 MB)
+    if (downloadResult.fileSizeBytes > 50 * 1024 * 1024) {
+      const sizeMb = (downloadResult.fileSizeBytes / (1024 * 1024)).toFixed(1);
+      await ctx.api.editMessageText(
+        chatId,
+        statusMsgId,
+        `⚠️ <b>Ukuran File Melebihi Batas Telegram:</b>\n\n` +
+        `File hasil unduhan berukuran <b>${sizeMb} MB</b>, sedangkan batas maksimal upload Telegram Bot API adalah <b>50 MB</b>.\n\n` +
+        `💡 <i>Saran: Silakan coba unduh versi 360p atau pilih opsi Audio MP3.</i>`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+      return;
+    }
+
     // Ubah pesan menjadi proses upload ke Telegram
     await ctx.api.editMessageText(
       chatId,
       statusMsgId,
-      `⬆️ **[3/3] Mengunggah file ke Telegram...**`,
-      { parse_mode: 'Markdown' }
+      `⬆️ <b>[3/3] Mengunggah file ke Telegram...</b>`,
+      { parse_mode: 'HTML' }
     ).catch(() => {});
 
     // Kirim file ke pengguna
     const inputFile = new InputFile(downloadResult.filePath, downloadResult.fileName);
-    const caption = `🎬 **${pending.title}**\n\n🤖 Diunduh via @${ctx.me.username}`;
+    const cleanTitle = escapeHtml(pending.title.slice(0, 900));
+    const caption = `🎬 <b>${cleanTitle}</b>\n\n🤖 Diunduh via @${ctx.me.username}`;
 
     if (downloadResult.mimeType === 'audio') {
-      await ctx.replyWithAudio(inputFile, {
-        caption,
-        title: pending.title,
-        parse_mode: 'Markdown'
-      });
+      try {
+        await ctx.replyWithAudio(inputFile, {
+          caption,
+          title: pending.title.slice(0, 200),
+          parse_mode: 'HTML'
+        });
+      } catch (sendErr) {
+        // Fallback plain text jika format HTML ditolak Telegram
+        await ctx.replyWithAudio(inputFile, {
+          caption: `🎬 ${pending.title.slice(0, 900)}\n\n🤖 Diunduh via @${ctx.me.username}`,
+          title: pending.title.slice(0, 200)
+        });
+      }
     } else {
-      await ctx.replyWithVideo(inputFile, {
-        caption,
-        parse_mode: 'Markdown',
-        supports_streaming: true
-      });
+      try {
+        await ctx.replyWithVideo(inputFile, {
+          caption,
+          parse_mode: 'HTML',
+          supports_streaming: true
+        });
+      } catch (sendErr) {
+        // Fallback plain text jika format HTML ditolak Telegram
+        await ctx.replyWithVideo(inputFile, {
+          caption: `🎬 ${pending.title.slice(0, 900)}\n\n🤖 Diunduh via @${ctx.me.username}`,
+          supports_streaming: true
+        });
+      }
     }
 
     // Catat riwayat unduhan & naikkan penggunaan kuota
@@ -229,7 +262,8 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
     await ctx.api.editMessageText(
       chatId,
       statusMsgId,
-      `❌ **Proses Pengunduhan Gagal:**\n${err.message || 'Terjadi kesalahan sistem saat mengunduh berkas.'}`
+      `❌ <b>Proses Pengunduhan Gagal:</b>\n${escapeHtml(err.message || 'Terjadi kesalahan sistem saat mengunduh berkas.')}`,
+      { parse_mode: 'HTML' }
     ).catch(() => {});
   } finally {
     // Zero-persistence: Bersihkan file sementara dari direktori tmp

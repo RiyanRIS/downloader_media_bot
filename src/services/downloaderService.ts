@@ -38,12 +38,18 @@ export function detectPlatform(url: string): MediaMetadata['platform'] {
   return 'generic';
 }
 
-function buildBaseArgs(): string[] {
-  const args: string[] = ['--no-warnings', '--no-playlist'];
+function buildBaseArgs(url?: string, forceCookies = false): string[] {
+  const args: string[] = ['--no-warnings', '--no-playlist', '--js-runtimes', 'node'];
   if (config.cookiesPath && fs.existsSync(config.cookiesPath)) {
-    args.push('--cookies', config.cookiesPath);
+    const isYoutube = url ? detectPlatform(url) === 'youtube' : false;
+    // Di YouTube, cookie sesi akun Google dari browser sering memicu "The page needs to be reloaded"
+    // Oleh karena itu, cookie hanya disertakan untuk platform non-YouTube atau jika diminta secara eksplisit
+    if (!isYoutube || forceCookies) {
+      args.push('--cookies', config.cookiesPath);
+    }
   }
-  if (config.ffmpegPath) {
+  // Hanya sertakan --ffmpeg-location jika merupakan path direktori/file yang benar-benar ada di filesystem
+  if (config.ffmpegPath && (path.isAbsolute(config.ffmpegPath) || fs.existsSync(config.ffmpegPath))) {
     args.push('--ffmpeg-location', config.ffmpegPath);
   }
   return args;
@@ -55,13 +61,18 @@ export const downloaderService = {
    */
   async checkYtDlpInstalled(): Promise<{ installed: boolean; version?: string; error?: string }> {
     return new Promise(resolve => {
-      execFile(config.ytDlpPath, ['--version'], (err, stdout) => {
-        if (err) {
-          resolve({ installed: false, error: err.message });
-        } else {
-          resolve({ installed: true, version: stdout.trim() });
+      execFile(
+        config.ytDlpPath,
+        ['--version'],
+        { env: { ...process.env, PYTHONWARNINGS: 'ignore' } },
+        (err, stdout) => {
+          if (err) {
+            resolve({ installed: false, error: err.message });
+          } else {
+            resolve({ installed: true, version: stdout.trim() });
+          }
         }
-      });
+      );
     });
   },
 
@@ -69,7 +80,7 @@ export const downloaderService = {
    * Mengambil metadata media tanpa mengunduh file utuh (Pre-check)
    */
   async getMediaInfo(url: string): Promise<MediaMetadata> {
-    const args = [...buildBaseArgs(), '--dump-json', url];
+    const args = [...buildBaseArgs(url), '--dump-json', url];
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 35000); // 35 detik batas waktu fetch metadata
 
@@ -77,11 +88,22 @@ export const downloaderService = {
       execFile(
         config.ytDlpPath,
         args,
-        { signal: controller.signal, maxBuffer: 10 * 1024 * 1024 },
+        {
+          signal: controller.signal,
+          maxBuffer: 10 * 1024 * 1024,
+          env: { ...process.env, PYTHONWARNINGS: 'ignore' }
+        },
         (err, stdout, stderr) => {
           clearTimeout(timeout);
           if (err) {
-            return reject(new Error(`Gagal membaca info media: ${stderr || err.message}`));
+            const cleanErr = stderr
+              ? stderr
+                  .split('\n')
+                  .map(l => l.trim())
+                  .filter(l => l.length > 0 && !l.toLowerCase().includes('deprecated feature'))
+                  .join('\n')
+              : err.message;
+            return reject(new Error(`Gagal membaca info media: ${cleanErr || err.message}`));
           }
 
           try {
@@ -124,7 +146,7 @@ export const downloaderService = {
       const ext = isAudio ? 'mp3' : 'mp4';
       const outputTemplate = path.join(config.tmpDir, `dl_${timestamp}_${randomStr}.%(ext)s`);
 
-      const args = [...buildBaseArgs()];
+      const args = [...buildBaseArgs(url)];
 
       if (isAudio) {
         // Ekstraksi Audio MP3
@@ -136,25 +158,28 @@ export const downloaderService = {
           url
         );
       } else if (formatOption === 'video_360p') {
-        // Format video resolusi hemat (360p)
+        // Format video 360p (mendukung landscape & potret YouTube Shorts/Reels/TikTok)
         args.push(
-          '-f', 'best[height<=360][filesize<48M]/best[height<=360]/best',
+          '-S', 'res:360,ext:mp4:m4a',
+          '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
           url
         );
       } else if (formatOption === 'video_720p') {
-        // Format video 720p
+        // Format video 720p (mendukung landscape & potret YouTube Shorts/Reels/TikTok)
         args.push(
-          '-f', 'best[height<=720][filesize<48M]/best[height<=720]/best',
+          '-S', 'res:720,ext:mp4:m4a',
+          '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
           url
         );
       } else {
-        // Default video (maksimal 48MB untuk Telegram API)
+        // Default video: utamakan hingga 720p agar hemat kuota & aman batas Telegram API 50MB
         args.push(
-          '-f', 'best[filesize<48M]/bestvideo[filesize<40M]+bestaudio/best',
+          '-S', 'res:720,ext:mp4:m4a',
+          '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
           url
@@ -165,7 +190,10 @@ export const downloaderService = {
       const timeout = setTimeout(() => controller.abort(), config.downloadTimeoutMs);
 
       return new Promise<DownloadResult>((resolve, reject) => {
-        const child = spawn(config.ytDlpPath, args, { signal: controller.signal });
+        const child = spawn(config.ytDlpPath, args, {
+          signal: controller.signal,
+          env: { ...process.env, PYTHONWARNINGS: 'ignore' }
+        });
 
         let stderrBuffer = '';
 
@@ -182,14 +210,36 @@ export const downloaderService = {
           clearTimeout(timeout);
 
           if (code !== 0) {
-            return reject(new Error(`Gagal mengunduh media (Exit Code ${code}): ${stderrBuffer.slice(-300)}`));
+            const errorLines = stderrBuffer
+              .split('\n')
+              .map(l => l.trim())
+              .filter(l => l.length > 0 && !l.toLowerCase().includes('deprecated feature'));
+
+            const specificError =
+              errorLines.filter(l => l.startsWith('ERROR:')).join(' ') ||
+              errorLines.slice(-2).join(' ') ||
+              `Exit Code ${code}`;
+
+            return reject(new Error(`Gagal mengunduh media: ${specificError}`));
           }
 
           // Cari file yang dihasilkan di direktori tmp
           try {
             const files = fs.readdirSync(config.tmpDir);
+            const exactName = `dl_${timestamp}_${randomStr}.${ext}`;
             const prefix = `dl_${timestamp}_${randomStr}.`;
-            const matchedFile = files.find(f => f.startsWith(prefix));
+
+            // Utamakan file final yang sudah berhasil dimerge (cth: .mp4 atau .mp3)
+            const matchedFile =
+              files.find(f => f === exactName) ||
+              files.find(
+                f =>
+                  f.startsWith(prefix) &&
+                  !f.endsWith('.part') &&
+                  !f.endsWith('.ytdl') &&
+                  !/\.f\d+\./.test(f)
+              ) ||
+              files.find(f => f.startsWith(prefix) && !f.endsWith('.part') && !f.endsWith('.ytdl'));
 
             if (!matchedFile) {
               return reject(new Error('File hasil unduhan tidak ditemukan di direktori sementara'));
@@ -228,12 +278,17 @@ export const downloaderService = {
    */
   async updateYtDlp(): Promise<string> {
     return new Promise((resolve, reject) => {
-      execFile(config.ytDlpPath, ['-U'], (err, stdout, stderr) => {
-        if (err) {
-          return reject(new Error(`Gagal memperbarui yt-dlp: ${stderr || err.message}`));
+      execFile(
+        config.ytDlpPath,
+        ['-U'],
+        { env: { ...process.env, PYTHONWARNINGS: 'ignore' } },
+        (err, stdout, stderr) => {
+          if (err) {
+            return reject(new Error(`Gagal memperbarui yt-dlp: ${stderr || err.message}`));
+          }
+          resolve(stdout.trim());
         }
-        resolve(stdout.trim());
-      });
+      );
     });
   }
 };

@@ -2,6 +2,7 @@ import { Composer } from 'grammy';
 import { MyContext } from '../context.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { config } from '../../config/config.js';
+import { escapeHtml } from '../../utils/format.js';
 
 export const startComposer = new Composer<MyContext>();
 
@@ -29,10 +30,11 @@ startComposer.command('start', async ctx => {
       userRepository.setCustomLimit(referrerId, currentLimit + config.referralBonusLimit);
 
       // Kirim notifikasi ke pengajak
+      const inviterName = escapeHtml(from.username ? `@${from.username}` : from.first_name);
       await ctx.api.sendMessage(
         referrerId,
-        `🎉 **Teman Baru Bergabung!**\nPengguna @${from.username || from.id} mendaftar melalui link referral Anda.\nAnda mendapatkan bonus kuota **+${config.referralBonusLimit} unduhan**!`,
-        { parse_mode: 'Markdown' }
+        `🎉 <b>Teman Baru Bergabung!</b>\nPengguna ${inviterName} mendaftar melalui link referral Anda.\nAnda mendapatkan bonus kuota <b>+${config.referralBonusLimit} unduhan</b>!`,
+        { parse_mode: 'HTML' }
       ).catch(() => {});
     }
   }
@@ -42,12 +44,12 @@ startComposer.command('start', async ctx => {
   const remainingLimit = Math.max(0, effectiveLimit - user.daily_usage);
 
   const welcomeText = 
-    `👋 **Halo, ${from.first_name}!**\n\n` +
-    `Selamat datang di **Multi-Platform Downloader & STB Bot**.\n` +
+    `👋 <b>Halo, ${escapeHtml(from.first_name)}!</b>\n\n` +
+    `Selamat datang di <b>Multi-Platform Downloader & STB Bot</b>.\n` +
     `Kirimkan link media video/audio untuk langsung diunduh secara instan!\n\n` +
-    `📊 **Status Akun:** ${roleBadge}\n` +
-    `⚡ **Sisa Kuota Hari Ini:** ${remainingLimit} / ${effectiveLimit} unduhan\n\n` +
-    `🌐 **Platform yang Didukung:**\n` +
+    `📊 <b>Status Akun:</b> ${roleBadge}\n` +
+    `⚡ <b>Sisa Kuota Hari Ini:</b> ${remainingLimit} / ${effectiveLimit} unduhan\n\n` +
+    `🌐 <b>Platform yang Didukung:</b>\n` +
     `• YouTube (Video 720p / 360p & Audio MP3)\n` +
     `• TikTok (Video No Watermark & Audio)\n` +
     `• Instagram (Reels / Post / Stories)\n` +
@@ -55,25 +57,25 @@ startComposer.command('start', async ctx => {
     `• Threads\n\n` +
     `Ketik /help untuk panduan lengkap atau /profile untuk melihat akun Anda.`;
 
-  await ctx.reply(welcomeText, { parse_mode: 'Markdown' });
+  await ctx.reply(welcomeText, { parse_mode: 'HTML' });
 });
 
 startComposer.command('help', async ctx => {
   const helpText =
-    `📖 **Panduan Penggunaan Bot**\n\n` +
-    `1. **Cara Mengunduh Media:**\n` +
+    `📖 <b>Panduan Penggunaan Bot</b>\n\n` +
+    `1. <b>Cara Mengunduh Media:</b>\n` +
     `   Cukup salin dan tempelkan tautan video dari YouTube, TikTok, Instagram, X/Twitter, atau Threads ke obrolan ini.\n` +
     `   Pilih format yang diinginkan (Video atau Audio MP3).\n\n` +
-    `2. **Daftar Perintah Pengguna:**\n` +
+    `2. <b>Daftar Perintah Pengguna:</b>\n` +
     `   • /start - Menampilkan pesan awal dan info status.\n` +
     `   • /profile - Melihat detail profil, sisa kuota, dan masa aktif VIP.\n` +
     `   • /ref - Mendapatkan link referral unik untuk menambah kuota.\n` +
     `   • /help - Menampilkan panduan ini.\n\n` +
-    `3. **Upgrade Akun VIP:**\n` +
+    `3. <b>Upgrade Akun VIP:</b>\n` +
     `   Ingin kuota lebih besar tanpa batas kecepatan? Kirim foto bukti pembayaran transfer ke bot ini. Admin akan segera memverifikasinya!\n\n` +
-    `⚠️ *Catatan:* Maksimal ukuran file video yang didukung Telegram adalah 50 MB. Video berukuran lebih besar dapat diunduh dalam versi Audio MP3.`;
+    `⚠️ <i>Catatan:</i> Maksimal ukuran file video yang didukung Telegram adalah 50 MB. Video berukuran lebih besar dapat diunduh dalam versi Audio MP3.`;
 
-  await ctx.reply(helpText, { parse_mode: 'Markdown' });
+  await ctx.reply(helpText, { parse_mode: 'HTML' });
 });
 
 startComposer.command('profile', async ctx => {
@@ -88,20 +90,20 @@ startComposer.command('profile', async ctx => {
   let vipInfo = '';
   if (user.role === 'vip' && user.vip_expires_at) {
     const exp = new Date(user.vip_expires_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    vipInfo = `\n⏳ **Masa Aktif VIP Sampai:** ${exp}`;
+    vipInfo = `\n⏳ <b>Masa Aktif VIP Sampai:</b> ${exp}`;
   }
 
   const profileText =
-    `👤 **Profil Pengguna**\n\n` +
-    `• **ID Telegram:** \`${user.telegram_id}\`\n` +
-    `• **Username:** @${user.username || '-'}\n` +
-    `• **Tipe Akun:** ${roleBadge}${vipInfo}\n` +
-    `• **Penggunaan Hari Ini:** ${user.daily_usage} / ${effectiveLimit} unduhan\n` +
-    `• **Sisa Kuota Hari Ini:** **${remaining} unduhan**\n` +
-    `• **Teman yang Diundang:** ${totalRefs} orang\n\n` +
-    `💡 *Ajak teman bergabung menggunakan /ref untuk mendapatkan tambahan bonus kuota!*`;
+    `👤 <b>Profil Pengguna</b>\n\n` +
+    `• <b>ID Telegram:</b> <code>${user.telegram_id}</code>\n` +
+    `• <b>Username:</b> @${escapeHtml(user.username || '-')}\n` +
+    `• <b>Tipe Akun:</b> ${roleBadge}${vipInfo}\n` +
+    `• <b>Penggunaan Hari Ini:</b> ${user.daily_usage} / ${effectiveLimit} unduhan\n` +
+    `• <b>Sisa Kuota Hari Ini:</b> <b>${remaining} unduhan</b>\n` +
+    `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
+    `💡 <i>Ajak teman bergabung menggunakan /ref untuk mendapatkan tambahan bonus kuota!</i>`;
 
-  await ctx.reply(profileText, { parse_mode: 'Markdown' });
+  await ctx.reply(profileText, { parse_mode: 'HTML' });
 });
 
 startComposer.command('ref', async ctx => {
@@ -112,11 +114,11 @@ startComposer.command('ref', async ctx => {
   const totalRefs = userRepository.countReferrals(ctx.user.telegram_id);
 
   const refText =
-    `🔗 **Program Referral Bot**\n\n` +
+    `🔗 <b>Program Referral Bot</b>\n\n` +
     `Bagikan link referral Anda kepada teman atau grup untuk mendapatkan kuota unduhan tambahan!\n\n` +
-    `• **Link Referral Anda:**\n\`${refLink}\`\n\n` +
-    `🎁 **Bonus:** Setiap pengguna baru yang bergabung melalui link Anda, Anda akan mendapatkan **+${config.referralBonusLimit} kuota unduhan**.\n` +
-    `👥 **Total Teman Terundang:** ${totalRefs} pengguna`;
+    `• <b>Link Referral Anda:</b>\n<code>${refLink}</code>\n\n` +
+    `🎁 <b>Bonus:</b> Setiap pengguna baru yang bergabung melalui link Anda, Anda akan mendapatkan <b>+${config.referralBonusLimit} kuota unduhan</b>.\n` +
+    `👥 <b>Total Teman Terundang:</b> ${totalRefs} pengguna`;
 
-  await ctx.reply(refText, { parse_mode: 'Markdown' });
+  await ctx.reply(refText, { parse_mode: 'HTML' });
 });

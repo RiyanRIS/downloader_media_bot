@@ -21,14 +21,18 @@ async function runTests() {
     }
   }
 
+  const testUserId = 99999991;
+  const testRefId = 99999990;
+
   try {
     // 1. Uji Database Migrations
     runMigrations();
     assert(true, 'Database migrations execute without error');
 
     // 2. Uji User Repository & Referral
-    const testUserId = 99999991;
-    const testRefId = 99999990;
+    // Reset user uji jika ada data dari run sebelumnya
+    userRepository.setCustomLimit(testUserId, null as any);
+    userRepository.setRole(testUserId, 'user');
 
     // Buat referrer
     const refUser = userRepository.getOrCreateUser(testRefId, 'referrer_user');
@@ -110,10 +114,13 @@ async function runTests() {
     console.error('Terjadi error selama pengujian:', err);
     failed++;
   } finally {
-    closeDatabase();
+    // Reset state user uji
+    userRepository.setCustomLimit(testUserId, null as any);
   }
 
-  process.exit(failed > 0 ? 1 : 0);
+  if (failed > 0) {
+    process.exitCode = 1;
+  }
 }
 
 runTests();

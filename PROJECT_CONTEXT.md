@@ -165,7 +165,13 @@ RAM_ALERT_PERCENT=90
      * Linux ARM64 (STB): `sudo wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux_aarch64 -O /usr/local/bin/yt-dlp`
 2. **Error `cannot execute binary file: Exec format error`:**
    * Terjadi karena binary arsitektur salah (misal binary ARM64 dijalankan di CPU x86_64). Hapus dan pasang binary yang sesuai atau buat symlink dari pip: `sudo ln -s ~/.local/bin/yt-dlp /usr/local/bin/yt-dlp`.
-3. **Versi `better-sqlite3`:**
-   * Di Windows / Node 22, gunakan versi `^11.8.1` yang memiliki prebuilt binary stabil dan kompatibel.
-4. **Menjalankan Tes:**
+3. **Pencegahan Error `403 Forbidden` & YouTube Cipher:**
+   * yt-dlp dijalankan dengan opsi `--js-runtimes node` agar Node.js mengeksekusi tantangan JavaScript YouTube secara otomatis.
+   * Untuk login wall Instagram / YouTube batasan usia, letakkan file `cookies.txt` di root folder dan set `COOKIES_PATH=./cookies.txt` di `.env` (file ini otomatis diabaikan oleh `.gitignore`).
+4. **Format Selector YouTube Shorts & Lanskap:**
+   * Menggunakan format sorting `-S res:720,ext:mp4:m4a -f bestvideo+bestaudio/best --merge-output-format mp4`. Ini menghindari bug `Requested format is not available` pada video Shorts (720x1280) dan menggabungkan stream terpisah via FFmpeg.
+5. **Keamanan Parsing Pesan Telegram:**
+   * Seluruh handler bot menggunakan mode `HTML` (`parse_mode: 'HTML'`) dan fungsi `escapeHtml()` agar karakter `_` pada username (cth: `@ivy_your_assistant_bot`) tidak merusak entitas Markdown. Dilengkapi fallback pengiriman plain text.
+6. **Versi `better-sqlite3` & Testing:**
+   * Di Windows / Node 22-24, gunakan versi `^11.8.1` yang memiliki prebuilt binary stabil.
    * `npm test` menjalankan 24 unit test terintegrasi (database, regex, limit, health, orphan cleaner).

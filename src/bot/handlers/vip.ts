@@ -2,6 +2,7 @@ import { Composer, InlineKeyboard } from 'grammy';
 import { MyContext } from '../context.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { config } from '../../config/config.js';
+import { escapeHtml } from '../../utils/format.js';
 
 export const vipComposer = new Composer<MyContext>();
 
@@ -23,11 +24,11 @@ vipComposer.on('message:photo', async ctx => {
     .text('❌ Tolak', `reject_vip:${from.id}`);
 
   const adminCaption =
-    `💳 **BUKTI PEMBAYARAN VIP MASUK**\n\n` +
-    `• **User ID:** \`${from.id}\`\n` +
-    `• **Nama:** ${from.first_name} ${from.last_name || ''}\n` +
-    `• **Username:** @${from.username || '-'}\n` +
-    `• **Waktu:** ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n\n` +
+    `💳 <b>BUKTI PEMBAYARAN VIP MASUK</b>\n\n` +
+    `• <b>User ID:</b> <code>${from.id}</code>\n` +
+    `• <b>Nama:</b> ${escapeHtml(from.first_name)} ${escapeHtml(from.last_name || '')}\n` +
+    `• <b>Username:</b> @${escapeHtml(from.username || '-')}\n` +
+    `• <b>Waktu:</b> ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n\n` +
     `Klik tombol di bawah untuk verifikasi instan:`;
 
   let forwarded = false;
@@ -35,7 +36,7 @@ vipComposer.on('message:photo', async ctx => {
     try {
       await ctx.api.sendPhoto(adminId, highestPhoto.file_id, {
         caption: adminCaption,
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
         reply_markup: keyboard
       });
       forwarded = true;
@@ -46,8 +47,8 @@ vipComposer.on('message:photo', async ctx => {
 
   if (forwarded) {
     await ctx.reply(
-      '📩 **Bukti transfer Anda telah diterima.**\nAdmin akan segera memverifikasi pembayaran Anda. Setelah dikonfirmasi, status VIP akan otomatis aktif.',
-      { parse_mode: 'Markdown' }
+      '📩 <b>Bukti transfer Anda telah diterima.</b>\nAdmin akan segera memverifikasi pembayaran Anda. Setelah dikonfirmasi, status VIP akan otomatis aktif.',
+      { parse_mode: 'HTML' }
     );
   } else {
     await ctx.reply('⚠️ Belum ada Admin yang dikonfigurasi pada bot. Silakan hubungi pengelola bot secara langsung.');
@@ -72,19 +73,21 @@ vipComposer.callbackQuery(/^confirm_vip:(\d+):(\d+)$/, async ctx => {
     await ctx.answerCallbackQuery({ text: `Berhasil mengaktifkan VIP ${days} hari!` });
     
     // Perbarui pesan di obrolan admin
+    const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
     await ctx.editMessageCaption({
-      caption: `${ctx.callbackQuery.message?.caption}\n\n✅ **DIKONFIRMASI OLEH ADMIN:** @${ctx.from.username || adminId} (VIP +${days} Hari)`,
+      caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (VIP +${days} Hari)`,
+      parse_mode: 'HTML',
       reply_markup: undefined
     }).catch(() => {});
 
     // Kirim notifikasi ucapan selamat ke pengguna
     await ctx.api.sendMessage(
       targetUserId,
-      `🎉 **Selamat! Akun Anda Telah Aktif Sebagai VIP!**\n\n` +
-      `Masa aktif VIP: **${days} Hari**\n` +
-      `Batas kuota harian: **${config.vipDailyLimit} unduhan/hari**.\n\n` +
+      `🎉 <b>Selamat! Akun Anda Telah Aktif Sebagai VIP!</b>\n\n` +
+      `Masa aktif VIP: <b>${days} Hari</b>\n` +
+      `Batas kuota harian: <b>${config.vipDailyLimit} unduhan/hari</b>.\n\n` +
       `Terima kasih telah mendukung server kami!`,
-      { parse_mode: 'Markdown' }
+      { parse_mode: 'HTML' }
     ).catch(() => {});
   } else {
     await ctx.answerCallbackQuery({ text: 'Gagal memperbarui status user di database.', show_alert: true });
@@ -102,14 +105,16 @@ vipComposer.callbackQuery(/^reject_vip:(\d+)$/, async ctx => {
   const targetUserId = parseInt(ctx.match[1], 10);
   await ctx.answerCallbackQuery({ text: 'Bukti transfer ditolak.' });
 
+  const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
   await ctx.editMessageCaption({
-    caption: `${ctx.callbackQuery.message?.caption}\n\n❌ **DITOLAK OLEH ADMIN:** @${ctx.from.username || adminId}`,
+    caption: `${ctx.callbackQuery.message?.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
+    parse_mode: 'HTML',
     reply_markup: undefined
   }).catch(() => {});
 
   await ctx.api.sendMessage(
     targetUserId,
-    '❌ **Bukti Pembayaran Ditolak.**\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin jika terdapat kekeliruan.',
-    { parse_mode: 'Markdown' }
+    '❌ <b>Bukti Pembayaran Ditolak.</b>\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin jika terdapat kekeliruan.',
+    { parse_mode: 'HTML' }
   ).catch(() => {});
 });
