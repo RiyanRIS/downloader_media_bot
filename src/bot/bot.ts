@@ -7,6 +7,7 @@ import { authMiddleware } from './middlewares/auth.js';
 import { startComposer } from './handlers/start.js';
 import { vipComposer } from './handlers/vip.js';
 import { adminComposer } from './handlers/admin.js';
+import { gameComposer } from './handlers/game.js';
 import { downloadComposer } from './handlers/download.js';
 
 export function createBot(): Bot<MyContext> {
@@ -30,6 +31,7 @@ export function createBot(): Bot<MyContext> {
   bot.use(startComposer);
   bot.use(vipComposer);
   bot.use(adminComposer);
+  bot.use(gameComposer);
   bot.use(downloadComposer);
 
   return bot;

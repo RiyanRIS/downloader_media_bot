@@ -12,10 +12,16 @@ export function runMigrations(): void {
       vip_expires_at TEXT,
       referrer_id INTEGER,
       is_banned INTEGER NOT NULL DEFAULT 0,
+      coins INTEGER NOT NULL DEFAULT 100,
+      exp INTEGER NOT NULL DEFAULT 0,
+      games_played INTEGER NOT NULL DEFAULT 0,
+      games_won INTEGER NOT NULL DEFAULT 0,
+      last_daily_claim TEXT,
       created_at TEXT NOT NULL DEFAULT (DATETIME('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_users_referrer ON users(referrer_id);
+    CREATE INDEX IF NOT EXISTS idx_users_coins ON users(coins);
   `);
 
   // 2. Tabel downloads_log

@@ -48,7 +48,8 @@ startComposer.command('start', async ctx => {
     `Selamat datang di <b>Multi-Platform Downloader & STB Bot</b>.\n` +
     `Kirimkan link media video, audio, foto, atau album untuk langsung diunduh secara instan!\n\n` +
     `📊 <b>Status Akun:</b> ${roleBadge}\n` +
-    `⚡ <b>Sisa Kuota Hari Ini:</b> ${remainingLimit} / ${effectiveLimit} unduhan\n\n` +
+    `⚡ <b>Sisa Kuota Hari Ini:</b> ${remainingLimit} / ${effectiveLimit} unduhan\n` +
+    `💰 <b>Saldo Koin:</b> ${user.coins} Koin (Ketik /games untuk bermain)\n\n` +
     `🌐 <b>Platform yang Didukung:</b>\n` +
     `• YouTube (Video 720p / 360p & Audio MP3)\n` +
     `• TikTok (Video No Watermark & Audio)\n` +
@@ -59,7 +60,7 @@ startComposer.command('start', async ctx => {
     `• Reddit (Video & Galeri Foto)\n` +
     `• Pinterest (Video Pin & Gambar)\n` +
     `• Bilibili / Bstation (Video Anime & Drama)\n\n` +
-    `Ketik /help untuk panduan lengkap atau /profile untuk melihat akun Anda.`;
+    `Ketik /help untuk panduan lengkap, /profile untuk melihat akun, atau /games untuk mini-games.`;
 
   await ctx.reply(welcomeText, { parse_mode: 'HTML' });
 });
@@ -72,12 +73,25 @@ startComposer.command('help', async ctx => {
     `   Pilih format yang diinginkan (Video, Audio MP3, atau Foto/Album).\n\n` +
     `2. <b>Daftar Perintah Pengguna:</b>\n` +
     `   • /start - Menampilkan pesan awal dan info status.\n` +
-    `   • /profile - Melihat detail profil, sisa kuota, dan masa aktif VIP.\n` +
-    `   • /ref - Mendapatkan link referral unik untuk menambah kuota.\n` +
+    `   • /profile - Melihat detail profil, sisa kuota, saldo koin, dan masa aktif VIP.\n` +
+    `   • /ref - Mendapatkan link referral unik untuk menambah kuota (+5 per teman).\n` +
     `   • /help - Menampilkan panduan ini.\n\n` +
-    `3. <b>Upgrade Akun VIP:</b>\n` +
-    `   Ingin kuota lebih besar tanpa batas kecepatan? Kirim foto bukti pembayaran transfer ke bot ini. Admin akan segera memverifikasinya!\n\n` +
-    `⚠️ <i>Catatan:</i> Maksimal ukuran file video yang didukung Telegram adalah 50 MB. Video berukuran lebih besar dapat diunduh dalam versi Audio MP3.`;
+    `3. <b>🎮 Mini-Games & Hadiah Koin:</b>\n` +
+    `   • /games - Dashboard arena permainan & katalog game.\n` +
+    `   • /family100 atau /f100 - Kuis survei Family 100 seru (+2 koin & +1 EXP per jawaban).\n` +
+    `   • /nyerah_f100 - Menyerah dari ronde Family 100.\n` +
+    `   • /tebakgambar atau /tg - Permainan tebak gambar (+4 koin, +2 koin jika clue, -5 jika gagal).\n` +
+    `   • /nyerah - Menyerah saat bermain tebak gambar dan melihat jawaban (-5 koin).\n` +
+    `   • /dice &lt;taruhan&gt; - Main lempar dadu lawan bot.\n` +
+    `   • /slot &lt;taruhan&gt; - Putar mesin slot jackpot.\n` +
+    `   • /tebak - Kuis tebak-tebakan interaktif (+2 koin, salah/menyerah -5 koin).\n` +
+    `   • /claim - Klaim gratis +50 koin setiap hari.\n` +
+    `   • /koin - Cek saldo koin dan statistik menang.\n` +
+    `   • /tukar - Tukar koin game jadi kuota unduhan bot!\n` +
+    `   • /leaderboard - Papan peringkat 10 pemain terkaya.\n\n` +
+    `4. <b>Upgrade Akun VIP:</b>\n` +
+    `   Ingin kuota lebih besar (50 unduhan/hari)? Kirim foto bukti pembayaran transfer ke bot ini. Admin akan segera memverifikasinya!\n\n` +
+    `⚠️ <i>Catatan:</i> Maksimal ukuran file video yang didukung Telegram adalah 50 MB. Video berukuran lebih besar dapat diunduh dalam versi Audio MP3 atau Tautan Langsung.`;
 
   await ctx.reply(helpText, { parse_mode: 'HTML' });
 });
@@ -90,6 +104,7 @@ startComposer.command('profile', async ctx => {
   const effectiveLimit = userRepository.getEffectiveLimit(user);
   const remaining = Math.max(0, effectiveLimit - user.daily_usage);
   const totalRefs = userRepository.countReferrals(user.telegram_id);
+  const level = Math.floor(user.exp / 100) + 1;
 
   let vipInfo = '';
   if (user.role === 'vip' && user.vip_expires_at) {
@@ -104,8 +119,9 @@ startComposer.command('profile', async ctx => {
     `• <b>Tipe Akun:</b> ${roleBadge}${vipInfo}\n` +
     `• <b>Penggunaan Hari Ini:</b> ${user.daily_usage} / ${effectiveLimit} unduhan\n` +
     `• <b>Sisa Kuota Hari Ini:</b> <b>${remaining} unduhan</b>\n` +
+    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b> (Level ${level})\n` +
     `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
-    `💡 <i>Ajak teman bergabung menggunakan /ref untuk mendapatkan tambahan bonus kuota!</i>`;
+    `💡 <i>Ajak teman (/ref) atau mainkan game (/games) untuk mendapatkan kuota unduhan ekstra!</i>`;
 
   await ctx.reply(profileText, { parse_mode: 'HTML' });
 });

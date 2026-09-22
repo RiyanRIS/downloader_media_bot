@@ -157,6 +157,53 @@ async function runTests() {
     const cleanResult = systemService.cleanupOrphanFiles(0);
     assert(typeof cleanResult.cleanedCount === 'number', 'Orphan cleaner runs safely');
 
+    // 9. Uji Modul Games & Sistem Koin
+    const gameUser = userRepository.getUser(testUserId)!;
+    assert(typeof gameUser.coins === 'number', 'User has coins field');
+    assert(typeof gameUser.exp === 'number', 'User has exp field');
+
+    const initialCoins = gameUser.coins;
+    userRepository.addCoins(testUserId, 50, 10);
+    const updatedCoinUser = userRepository.getUser(testUserId)!;
+    assert(updatedCoinUser.coins === initialCoins + 50, 'addCoins adds 50 coins');
+    assert(updatedCoinUser.exp >= 10, 'addCoins adds 10 exp');
+
+    const deductSuccess = userRepository.deductCoins(testUserId, 30);
+    assert(deductSuccess === true, 'deductCoins successfully deducts 30 coins');
+
+    const deductFail = userRepository.deductCoins(testUserId, 999999);
+    assert(deductFail === false, 'deductCoins prevents overdraft if insufficient coins');
+
+    userRepository.recordGameResult(testUserId, true, 40, 15);
+    const wonUser = userRepository.getUser(testUserId)!;
+    assert(wonUser.games_played >= 1 && wonUser.games_won >= 1, 'recordGameResult records win statistics');
+
+    // Uji penukaran koin ke kuota
+    userRepository.addCoins(testUserId, 200, 0);
+    const exchangeRes = userRepository.exchangeCoinsForQuota(testUserId, 100, 5);
+    assert(exchangeRes.success === true, 'exchangeCoinsForQuota converts 100 coins into +5 quota');
+    assert(exchangeRes.newLimit >= 10, 'Effective limit increased after exchange');
+
+    // Uji Leaderboard
+    const leaderboard = userRepository.getGameLeaderboard(5);
+    assert(Array.isArray(leaderboard) && leaderboard.length > 0, 'getGameLeaderboard returns top players');
+    assert(leaderboard[0].coins >= (leaderboard[1]?.coins ?? 0), 'Leaderboard sorted by coins descending');
+
+    // Uji Kuis Dataset
+    const sampleQuiz = (await import('../src/games/quizData.js')).getRandomQuiz();
+    assert(sampleQuiz.options.length === 4, 'Quiz question has 4 options');
+    assert(sampleQuiz.correctIndex >= 0 && sampleQuiz.correctIndex <= 3, 'Quiz correct index is valid');
+
+    // Uji Tebak Gambar Dataset & Clue Generator
+    const { getRandomTebakGambar, generateClue } = await import('../src/games/tebakGambarData.js');
+    const tgItem = getRandomTebakGambar();
+    assert(typeof tgItem.img === 'string' && tgItem.img.startsWith('http'), 'Tebak gambar item has valid image URL');
+    assert(typeof tgItem.jawaban === 'string' && tgItem.jawaban.length > 0, 'Tebak gambar item has valid answer');
+    const clue1 = generateClue('TANTANGAN SERU', 1);
+    assert(clue1.includes('_'), 'Clue level 1 masks characters with underscore');
+    const clue2 = generateClue('TANTANGAN SERU', 2);
+    assert(clue2.length > 0, 'Clue level 2 generated');
+
     console.log(`\n🏁 Hasil Uji: ${passed} Passed, ${failed} Failed.`);
   } catch (err) {
     console.error('Terjadi error selama pengujian:', err);

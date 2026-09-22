@@ -38,15 +38,20 @@ src/
 │   ├── downloaderService.ts     # p-limit(2), yt-dlp --dump-json (pre-check <48MB), downloadMedia(), updateYtDlp()
 │   ├── systemService.ts         # systeminformation (CPU temp, RAM, Disk tmp, Uptime), reboot, drop_caches, speedtest
 │   └── cronService.ts           # Midnight reset kuota (00:00), orphan file cleaner (30m), thermal alert (>75°C)
+├── games/
+│   ├── quizData.ts              # Bank soal tebak-tebakan, logika, dan asah otak interaktif
+│   ├── tebakGambarData.ts       # Dataset Tebak Gambar BochilTeam + online fetcher & clue generator
+│   └── family100Data.ts         # Dataset Family 100 plesdisgila (1700+ soal survei) + fallback offline
 ├── bot/
 │   ├── context.ts               # Custom MyContext (menempelkan ctx.user dari authMiddleware)
 │   ├── bot.ts                   # Inisialisasi Bot, error handler, runner launcher
 │   ├── middlewares/
 │   │   ├── auth.ts              # getOrCreateUser, cek is_banned, pasang ctx.user
 │   │   ├── rateLimit.ts         # @grammyjs/ratelimiter (maks 3 req / 2.5 detik)
-│   │   └── urlDetector.ts       # RegEx extractor YouTube, TikTok, IG, X, Threads
+│   │   └── urlDetector.ts       # RegEx extractor YouTube, TikTok, IG, X, FB, Reddit, Pin, Bilibili
 │   └── handlers/
 │       ├── start.ts             # /start (payload referral ?ref=<id>), /help, /profile, /ref
+│       ├── game.ts              # /games, /family100 (/f100, /nyerah_f100), /tebakgambar (/tg, /nyerah), /dice, /slot, /tebak, /claim, /koin, /tukar, /leaderboard
 │       ├── download.ts          # Tangkap link, status progress dinamis, inline button format, upload & unlink
 │       ├── vip.ts               # Forward foto bukti transfer ke Admin + callback konfirmasi/tolak
 │       └── admin.ts             # /health, /stats, /backup, /reboot, /cleancache, /speedtest, /updatedlp, /broadcast
@@ -66,6 +71,11 @@ src/
 * `vip_expires_at` (TEXT/ISO string, Nullable): Masa kedaluwarsa VIP (otomatis turun ke `'user'` jika lewat).
 * `referrer_id` (INTEGER, Nullable): Telegram ID yang mengajak.
 * `is_banned` (INTEGER): 0 (Aktif) atau 1 (Diblokir).
+* `coins` (INTEGER, Default 100): Saldo koin virtual pemain.
+* `exp` (INTEGER, Default 0): Poin pengalaman level game.
+* `games_played` (INTEGER, Default 0): Total permainan yang dimainkan.
+* `games_won` (INTEGER, Default 0): Total kemenangan permainan.
+* `last_daily_claim` (TEXT, Nullable): Tanggal klaim koin harian (YYYY-MM-DD).
 * `created_at` (TEXT): Timestamp pendaftaran.
 
 ### Tabel `downloads_log`
@@ -120,6 +130,18 @@ src/
 | `/help` | Semua | Panduan lengkap platform & aturan ukuran file |
 | `/profile` | Semua | Cek status role, sisa kuota hari ini, masa aktif VIP |
 | `/ref` | Semua | Tautan referral & statistik teman yang diundang |
+| `/games` | Semua | Dashboard arena mini-games & katalog game |
+| `/family100` / `/f100` | Semua | Game kuis survei Family 100 (60s, +2 koin/+1 exp, -10 koin jika 0) |
+| `/nyerah_f100` | Semua | Menyerah dari ronde Family 100 yang sedang aktif |
+| `/tebakgambar` / `/tg` | Semua | Tebak gambar (+4 koin / +2 koin jika clue, 30s, gagal -5 koin) |
+| `/nyerah` | Semua | Menyerah tebak gambar (-5 koin) |
+| `/dice <taruhan>` | Semua | Lempar dadu lawan bot |
+| `/slot <taruhan>` | Semua | Mesin slot jackpot |
+| `/tebak` | Semua | Kuis pilihan ganda (+2 koin, salah/menyerah -5 koin) |
+| `/claim` | Semua | Klaim harian +50 koin |
+| `/koin` | Semua | Cek saldo koin dan level |
+| `/tukar` | Semua | Tukar koin game ke kuota unduhan |
+| `/leaderboard` | Semua | Papan peringkat 10 pemain terkaya |
 | `/health` | Admin | Diagnostik real-time CPU temp, RAM, Disk, Uptime |
 | `/stats` | Admin | Total user, VIP, total download per platform |
 | `/backup` | Admin | Kirim berkas `bot.db` langsung ke Telegram |

@@ -5,6 +5,8 @@ import { createBot, launchBot } from './bot/bot.js';
 import { downloaderService } from './services/downloaderService.js';
 import { systemService } from './services/systemService.js';
 import { initBackgroundCrons } from './services/cronService.js';
+import { initTebakGambarData } from './games/tebakGambarData.js';
+import { initFamily100Data } from './games/family100Data.js';
 
 async function bootstrap() {
   console.log('====================================================');
@@ -15,6 +17,10 @@ async function bootstrap() {
 
   // 1. Jalankan migrasi tabel database SQLite
   runMigrations();
+
+  // Inisialisasi dataset game tebak gambar & family 100 di latar belakang
+  initTebakGambarData().catch(() => {});
+  initFamily100Data().catch(() => {});
 
   // 2. Periksa ketersediaan binary yt-dlp
   const ytCheck = await downloaderService.checkYtDlpInstalled();

@@ -48,6 +48,17 @@
 * `/updatedlp`: Pembaruan binary `yt-dlp` langsung ke versi rilis terbaru tanpa membuka terminal.
 * `/broadcast`: Siaran pesan massal ke seluruh pengguna terdaftar dengan mekanisme anti-flood (maks 25 msg/detik).
 
+### 🎮 5. Modul Mini-Games & Sistem Koin Virtual
+* **Sistem Koin Terpadu:** Setiap pengguna otomatis mendapatkan modal 100 koin, level, dan exp yang tercatat efisien di SQLite.
+* **Tukar Koin ke Kuota Unduhan (`/tukar`):** Kemenangan dari permainan dapat langsung ditukarkan menjadi batas kuota harian bot tambahan (100 koin = +5 kuota).
+* **Game Family 100 (`/family100` / `/f100`):** Kuis tebak jawaban survei populer (1700+ soal survei). Dapat dimainkan bersama di grup maupun chat pribadi. Tiap tebakan benar mendapat +2 koin & +1 EXP. Durasi 60 detik per ronde. Jika gagal tanpa menebak satu pun jawaban (0 jawaban), pembuat game dikenakan penalti -10 koin.
+* **Game Tebak Gambar (`/tebakgambar` / `/tg`):** Menampilkan gambar tebak-tebakan dari dataset BochilTeam lengkap dengan clue huruf tersamar, batas waktu 30 detik, tombol bantuan clue, dan tombol menyerah (`/nyerah`). Hadiah +4 koin & +2 EXP (atau +2 koin & +1 EXP jika butuh bantuan clue). Gagal atau menyerah dikenakan sanksi -5 koin.
+* **Game Dadu Keberuntungan (`/dice`):** Animasi dadu fisik Telegram (`🎲`) beradu angka melawan bot dengan pengganda hadiah 2x lipat.
+* **Mesin Slot Kasino Mini (`/slot`):** Animasi reel mesin slot Telegram (`🎰`) dengan Super Jackpot 777 (10x lipat hadiah), triple simbol kembar (4x–5x), dan double kembar (1.5x).
+* **Kuis Tebak-Tebakan Interaktif (`/tebak`):** Teka-teki kocak dan asah otak dengan 4 tombol pilihan ganda (A, B, C, D) interaktif langsung via Inline Keyboard (Hadiah: +2 koin & +1 EXP, salah atau menyerah soal lain: -5 koin).
+* **Klaim Bonus Harian (`/claim`):** Bonus +50 koin dan +10 EXP gratis setiap 24 jam.
+* **Papan Peringkat Global (`/leaderboard`):** Menampilkan daftar 10 pemain terkaya dengan raihan level dan winrate tertinggi.
+
 ---
 
 ## 📋 Daftar Perintah Bot
@@ -58,6 +69,18 @@
 | `/help` | Semua | Panduan format link media yang didukung dan aturan batas file |
 | `/profile` | Semua | Cek status keanggotaan (Free/VIP/Admin), sisa kuota hari ini, dan masa aktif |
 | `/ref` | Semua | Menampilkan tautan undangan referral dan total teman yang bergabung |
+| `/games` | Semua | Membuka arena dashboard permainan & mini-games interaktif |
+| `/family100` / `/f100` | Semua | Game kuis survei Family 100 (+2 koin/+1 EXP per jawaban benar, 60 detik) |
+| `/nyerah_f100` | Semua | Menyerah dalam ronde Family 100 dan melihat seluruh jawaban |
+| `/tebakgambar` / `/tg` | Semua | Tebak Gambar (+4 koin, +2 koin jika clue, 30s, gagal -5 koin) |
+| `/nyerah` | Semua | Menyerah dalam permainan Tebak Gambar (-5 koin) dan melihat jawaban |
+| `/dice <koin>` | Semua | Melempar dadu virtual Telegram berhadiah koin melawan bot |
+| `/slot <koin>` | Semua | Memutar mesin slot jackpot mini |
+| `/tebak` | Semua | Kuis teka-teki logika & humor (+2 koin, salah/menyerah -5 koin) |
+| `/claim` | Semua | Mengklaim bonus +50 koin gratis setiap hari |
+| `/koin` | Semua | Memeriksa saldo dompet koin, EXP, level, dan statistik kemenangan |
+| `/tukar` | Semua | Menukarkan koin game menjadi batas kuota unduhan bot ekstra |
+| `/leaderboard` | Semua | Menampilkan daftar 10 pemain game teratas |
 | `/health` | Admin | Menampilkan suhu CPU, penggunaan RAM, ruang tmpfs, dan uptime perangkat |
 | `/stats` | Admin | Statistik agregasi total pengguna, VIP aktif, dan unduhan per platform |
 | `/backup` | Admin | Mengunduh salinan berkas database `bot.db` ke Telegram |
@@ -91,21 +114,24 @@ downloader_media_bot/
 │   │   ├── downloaderService.ts     # Engine yt-dlp, antrean p-limit(2), ekstraksi metadata
 │   │   ├── systemService.ts         # Metrik systeminformation, reboot, drop_caches, cleaner
 │   │   └── cronService.ts           # Midnight reset (00:00), thermal alert, orphan cleaner
+│   ├── games/
+│   │   └── quizData.ts              # Bank soal tebak-tebakan, logika, dan asah otak
 │   ├── bot/
 │   │   ├── context.ts               # Custom context grammY (ctx.user)
 │   │   ├── bot.ts                   # Inisialisasi bot, error handler, runner launcher
 │   │   ├── middlewares/
 │   │   │   ├── auth.ts              # Autentikasi user otomatis, validasi blacklist/ban
 │   │   │   ├── rateLimit.ts         # Rate limiter anti-spam (maks 3 req / 2.5 detik)
-│   │   │   └── urlDetector.ts       # RegEx filter URL YouTube, TikTok, IG, X, Threads
+│   │   │   └── urlDetector.ts       # RegEx filter URL YouTube, TikTok, IG, X, FB, dll.
 │   │   └── handlers/
 │   │       ├── start.ts             # Handler /start, /help, /profile, /ref
+│   │       ├── game.ts              # Handler arena mini-games (/dice, /slot, /tebak, /claim, /tukar)
 │   │       ├── download.ts          # Handler unduh media, inline keyboard, upload file
 │   │       ├── vip.ts               # Handler bukti pembayaran VIP & approval admin
 │   │       └── admin.ts             # Handler perintah manajemen server & diagnostik
 │   └── index.ts                     # Entry point, pengecekan binary, graceful shutdown
 ├── test/
-│   └── index.test.ts                # Unit testing (Database, regex, logic, limit, health)
+│   └── index.test.ts                # Unit testing (Database, regex, games, limit, health)
 ├── .env.example                     # Contoh template konfigurasi environment
 ├── package.json
 └── tsconfig.json
