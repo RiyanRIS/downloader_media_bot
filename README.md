@@ -14,9 +14,10 @@
 ## 🌟 Fitur Unggulan
 
 ### 📥 1. Multi-Platform Media Downloader
-* **Platform yang Didukung:** YouTube, TikTok (tanpa watermark), Instagram (Reels/Post), X (Twitter), Threads, Facebook (Video/Reels), Reddit (Video), Pinterest (Video Pin), dan Bilibili / Bstation.
+* **Platform yang Didukung:** YouTube, TikTok (tanpa watermark), Instagram (Reels, Post Video, Foto & Album Carousel), X/Twitter (Video, MP3 & Foto Multi-Image), Threads (Video & Album Foto), Facebook (Video/Reels), Reddit (Video & Galeri Foto), Pinterest (Video Pin & Gambar), dan Bilibili / Bstation.
+* **Dukungan Foto & Album Carousel:** Otomatis mendeteksi postingan foto tunggal maupun galeri/album (misal 2-10+ foto di Instagram, Threads, atau X) dan mengirimkannya langsung ke Telegram menggunakan `replyWithPhoto` atau `replyWithMediaGroup`.
 * **Pre-check Batas 50MB Telegram:** Deteksi ukuran file sebelum mengunduh via metadata `yt-dlp`. Jika estimasi video $> 48\text{ MB}$, bot otomatis menawarkan opsi **Unduh Audio MP3 Saja** untuk menghindari kegagalan kirim.
-* **Pilihan Format & Resolusi Dinamis:** Dukungan pilihan resolusi YouTube (`720p`, `360p`, atau `MP3 Audio`) menggunakan Inline Keyboard.
+* **Pilihan Format & Resolusi Dinamis:** Dukungan pilihan resolusi YouTube (`720p`, `360p`, atau `MP3 Audio`) dan tombol unduh foto menggunakan Inline Keyboard.
 * **Live Dynamic Progress:** Notifikasi status interaktif bertahap:
   1. `[1/3] ⏳ Menunggu antrean...`
   2. `[2/3] ⬇️ Mengunduh media...`

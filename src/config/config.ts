@@ -47,6 +47,7 @@ export const config = {
   databasePath: process.env.DATABASE_PATH || './bot.db',
   tmpDir: resolvedTmpDir,
   ytDlpPath: process.env.YT_DLP_PATH || 'yt-dlp',
+  galleryDlPath: process.env.GALLERY_DL_PATH || 'gallery-dl',
   ffmpegPath: process.env.FFMPEG_PATH || 'ffmpeg',
   cookiesPath: process.env.COOKIES_PATH || undefined,
   maxConcurrentDownloads: getEnvNumber('MAX_CONCURRENT_DOWNLOADS', 2),

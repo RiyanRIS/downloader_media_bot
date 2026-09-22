@@ -1,7 +1,8 @@
-import { Composer, InlineKeyboard, InputFile } from 'grammy';
+import { Composer, InlineKeyboard, InputFile, InputMediaBuilder } from 'grammy';
 import { MyContext } from '../context.js';
 import { extractMediaUrl } from '../middlewares/urlDetector.js';
 import { downloaderService, downloadQueue } from '../../services/downloaderService.js';
+import { photoService, PhotoDownloadResult } from '../../services/photoService.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { downloadRepository } from '../../database/repositories/downloadRepository.js';
 import { escapeHtml } from '../../utils/format.js';
@@ -15,6 +16,8 @@ interface PendingDownload {
   platform: string;
   title: string;
   createdAt: number;
+  mediaType?: 'video' | 'audio' | 'photo' | 'album';
+  photoUrls?: string[];
 }
 
 const pendingDownloads = new Map<string, PendingDownload>();
@@ -74,12 +77,18 @@ downloadComposer.on('message:text', async (ctx, next) => {
       userId: from.id,
       platform: info.platform,
       title: info.title,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      mediaType: info.mediaType,
+      photoUrls: info.photoUrls
     });
 
     const keyboard = new InlineKeyboard();
 
-    if (info.isOverLimit) {
+    if (info.mediaType === 'photo') {
+      keyboard.text('🖼️ Unduh Foto', `dl:${requestId}:photo`);
+    } else if (info.mediaType === 'album') {
+      keyboard.text(`🖼️ Unduh Album (${info.photoUrls?.length || 0} Foto)`, `dl:${requestId}:album`);
+    } else if (info.isOverLimit) {
       // Jika ukuran video melebihi 48MB (batas Telegram)
       keyboard.text('🎧 Unduh Audio MP3 Saja', `dl:${requestId}:audio`);
       
@@ -93,10 +102,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
         { reply_markup: keyboard, parse_mode: 'HTML' }
       );
       return;
-    }
-
-    // Pilihan format berdasarkan platform
-    if (info.platform === 'youtube') {
+    } else if (info.platform === 'youtube') {
       keyboard
         .text('🎬 Video 720p', `dl:${requestId}:video_720p`)
         .text('🎬 Video 360p', `dl:${requestId}:video_360p`)
@@ -110,12 +116,17 @@ downloadComposer.on('message:text', async (ctx, next) => {
 
     const durationStr = info.duration ? `\n⏱ <b>Durasi:</b> ${Math.floor(info.duration / 60)}m ${info.duration % 60}s` : '';
     const sizeStr = info.filesizeApproxMb && info.filesizeApproxMb > 0 ? `\n📦 <b>Estimasi:</b> ~${info.filesizeApproxMb} MB` : '';
+    const typeStr = info.mediaType === 'album'
+      ? `\n🖼️ <b>Tipe:</b> Album Foto (${info.photoUrls?.length || 0} Foto)`
+      : info.mediaType === 'photo'
+      ? `\n🖼️ <b>Tipe:</b> Foto Tunggal`
+      : '';
 
     await ctx.api.editMessageText(
       ctx.chat.id,
       statusMsg.message_id,
       `🎥 <b>Media Ditemukan:</b>\n` +
-      `📌 <b>Judul:</b> ${escapeHtml(info.title)}${durationStr}${sizeStr}\n` +
+      `📌 <b>Judul:</b> ${escapeHtml(info.title)}${typeStr}${durationStr}${sizeStr}\n` +
       `🌐 <b>Platform:</b> ${info.platform.toUpperCase()}\n\n` +
       `Silakan pilih format yang ingin diunduh:`,
       { reply_markup: keyboard, parse_mode: 'HTML' }
@@ -133,7 +144,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
 // Callback Query ketika user menekan format unduhan
 downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
   const requestId = ctx.match[1];
-  const formatChoice = ctx.match[2] as 'video' | 'audio' | 'video_360p' | 'video_720p';
+  const formatChoice = ctx.match[2] as 'video' | 'audio' | 'video_360p' | 'video_720p' | 'photo' | 'album';
 
   const pending = pendingDownloads.get(requestId);
   if (!pending) {
@@ -170,6 +181,89 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
     `⏳ <b>[1/3] Menyiapkan Pengunduhan...</b>${queueNote}`,
     { parse_mode: 'HTML', reply_markup: undefined }
   ).catch(() => {});
+
+  // ==========================================
+  // Cabang Penanganan Foto & Album Carousel
+  // ==========================================
+  if (formatChoice === 'photo' || formatChoice === 'album') {
+    let photoResult: PhotoDownloadResult | null = null;
+    try {
+      await ctx.api.editMessageText(
+        chatId,
+        statusMsgId,
+        `⬇️ <b>[2/3] Mengunduh foto dari ${pending.platform.toUpperCase()}...</b>`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+
+      const targetUrls = pending.photoUrls && pending.photoUrls.length > 0
+        ? pending.photoUrls
+        : [pending.url];
+
+      photoResult = await photoService.downloadPhotos(targetUrls);
+
+      await ctx.api.editMessageText(
+        chatId,
+        statusMsgId,
+        `⬆️ <b>[3/3] Mengunggah foto ke Telegram...</b>`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+
+      const cleanTitle = escapeHtml(pending.title.slice(0, 900));
+      const caption = `🖼️ <b>${cleanTitle}</b>\n\n🤖 Diunduh via @${ctx.me.username}`;
+
+      if (photoResult.photos.length === 1) {
+        const single = photoResult.photos[0];
+        const inputFile = new InputFile(single.filePath, single.fileName);
+        try {
+          await ctx.replyWithPhoto(inputFile, { caption, parse_mode: 'HTML' });
+        } catch {
+          await ctx.replyWithPhoto(inputFile, {
+            caption: `🖼️ ${pending.title.slice(0, 900)}\n\n🤖 Diunduh via @${ctx.me.username}`
+          });
+        }
+      } else {
+        const photoBatches = photoService.chunkPhotos(photoResult.photos, 10);
+        for (let bIdx = 0; bIdx < photoBatches.length; bIdx++) {
+          const batch = photoBatches[bIdx];
+          const mediaGroup = batch.map((item, idx) => {
+            const inputFile = new InputFile(item.filePath, item.fileName);
+            const isFirst = bIdx === 0 && idx === 0;
+            return InputMediaBuilder.photo(inputFile, {
+              caption: isFirst ? caption : undefined,
+              parse_mode: isFirst ? 'HTML' : undefined
+            });
+          });
+          await ctx.replyWithMediaGroup(mediaGroup);
+        }
+      }
+
+      // Catat riwayat unduhan & naikkan penggunaan kuota
+      const totalBytes = photoResult.photos.reduce((acc, p) => acc + p.fileSizeBytes, 0);
+      userRepository.incrementDailyUsage(pending.userId);
+      downloadRepository.logDownload(
+        pending.userId,
+        pending.platform,
+        pending.url,
+        formatChoice,
+        totalBytes
+      );
+
+      // Hapus pesan status progress agar obrolan tetap rapi
+      await ctx.api.deleteMessage(chatId, statusMsgId).catch(() => {});
+    } catch (err: any) {
+      await ctx.api.editMessageText(
+        chatId,
+        statusMsgId,
+        `❌ <b>Proses Pengunduhan Gagal:</b>\n${escapeHtml(err.message || 'Gagal mengunduh foto.')}`,
+        { parse_mode: 'HTML' }
+      ).catch(() => {});
+    } finally {
+      if (photoResult && typeof photoResult.cleanup === 'function') {
+        photoResult.cleanup();
+      }
+    }
+    return;
+  }
 
   let downloadResult: any = null;
 

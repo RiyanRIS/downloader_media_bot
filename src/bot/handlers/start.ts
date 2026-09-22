@@ -46,18 +46,18 @@ startComposer.command('start', async ctx => {
   const welcomeText = 
     `👋 <b>Halo, ${escapeHtml(from.first_name)}!</b>\n\n` +
     `Selamat datang di <b>Multi-Platform Downloader & STB Bot</b>.\n` +
-    `Kirimkan link media video/audio untuk langsung diunduh secara instan!\n\n` +
+    `Kirimkan link media video, audio, foto, atau album untuk langsung diunduh secara instan!\n\n` +
     `📊 <b>Status Akun:</b> ${roleBadge}\n` +
     `⚡ <b>Sisa Kuota Hari Ini:</b> ${remainingLimit} / ${effectiveLimit} unduhan\n\n` +
     `🌐 <b>Platform yang Didukung:</b>\n` +
     `• YouTube (Video 720p / 360p & Audio MP3)\n` +
     `• TikTok (Video No Watermark & Audio)\n` +
-    `• Instagram (Reels / Post / Stories)\n` +
-    `• X / Twitter (Video & MP3)\n` +
-    `• Threads\n` +
+    `• Instagram (Reels, Post Video, Foto & Album Carousel)\n` +
+    `• X / Twitter (Video, MP3 & Foto Multi-Image)\n` +
+    `• Threads (Video & Album Foto)\n` +
     `• Facebook (Video & Reels)\n` +
-    `• Reddit (Video)\n` +
-    `• Pinterest (Video Pin)\n` +
+    `• Reddit (Video & Galeri Foto)\n` +
+    `• Pinterest (Video Pin & Gambar)\n` +
     `• Bilibili / Bstation (Video Anime & Drama)\n\n` +
     `Ketik /help untuk panduan lengkap atau /profile untuk melihat akun Anda.`;
 
@@ -68,8 +68,8 @@ startComposer.command('help', async ctx => {
   const helpText =
     `📖 <b>Panduan Penggunaan Bot</b>\n\n` +
     `1. <b>Cara Mengunduh Media:</b>\n` +
-    `   Cukup salin dan tempelkan tautan video dari YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, atau Bilibili ke obrolan ini.\n` +
-    `   Pilih format yang diinginkan (Video atau Audio MP3).\n\n` +
+    `   Cukup salin dan tempelkan tautan dari YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, atau Bilibili ke obrolan ini.\n` +
+    `   Pilih format yang diinginkan (Video, Audio MP3, atau Foto/Album).\n\n` +
     `2. <b>Daftar Perintah Pengguna:</b>\n` +
     `   • /start - Menampilkan pesan awal dan info status.\n` +
     `   • /profile - Melihat detail profil, sisa kuota, dan masa aktif VIP.\n` +

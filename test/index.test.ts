@@ -4,6 +4,7 @@ import { downloadRepository } from '../src/database/repositories/downloadReposit
 import { settingsRepository } from '../src/database/repositories/settingsRepository.js';
 import { extractMediaUrl } from '../src/bot/middlewares/urlDetector.js';
 import { detectPlatform } from '../src/services/downloaderService.js';
+import { photoService } from '../src/services/photoService.js';
 import { systemService } from '../src/services/systemService.js';
 import { closeDatabase } from '../src/database/db.js';
 
@@ -121,13 +122,24 @@ async function runTests() {
     const nonMedia = extractMediaUrl('https://google.com/search?q=test');
     assert(nonMedia === null, 'Ignore non-supported domain');
 
-    // 6. Uji System Service Health
+    // 6. Uji Photo Service Utilities
+    const dummyPhotos = Array.from({ length: 25 }, (_, i) => `photo_${i}.jpg`);
+    const chunks = photoService.chunkPhotos(dummyPhotos, 10);
+    assert(chunks.length === 3, 'Chunk 25 photos into 3 batches (10, 10, 5)');
+    assert(chunks[0].length === 10, 'First batch has 10 photos');
+    assert(chunks[2].length === 5, 'Third batch has 5 photos');
+
+    downloadRepository.logDownload(testUserId, 'instagram', 'https://instagram.com/p/abc123/', 'album', 3500000);
+    const updatedStats = downloadRepository.getStats();
+    assert(updatedStats.byPlatform['instagram'] >= 1, 'Instagram album download logged');
+
+    // 7. Uji System Service Health
     const health = await systemService.getHealth();
     assert(health.ramTotalMb > 0, 'RAM total detected via systeminformation');
     assert(health.uptimeFormatted.length > 0, 'Uptime formatted successfully');
     console.log(`     [Info Sistem Saat Ini: OS=${health.osName}, RAM=${health.ramUsedMb}/${health.ramTotalMb}MB, Uptime=${health.uptimeFormatted}]`);
 
-    // 7. Uji Orphan File Cleaner
+    // 8. Uji Orphan File Cleaner
     const cleanResult = systemService.cleanupOrphanFiles(0);
     assert(typeof cleanResult.cleanedCount === 'number', 'Orphan cleaner runs safely');
 

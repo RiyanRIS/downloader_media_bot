@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import pLimit from 'p-limit';
 import { config } from '../config/config.js';
+import { photoService } from './photoService.js';
 
 export interface MediaMetadata {
   id: string;
@@ -14,6 +15,8 @@ export interface MediaMetadata {
   extractor: string;
   platform: 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'threads' | 'facebook' | 'reddit' | 'pinterest' | 'bilibili' | 'generic';
   isOverLimit: boolean;
+  mediaType?: 'video' | 'audio' | 'photo' | 'album';
+  photoUrls?: string[];
   raw?: any;
 }
 
@@ -43,11 +46,14 @@ export function detectPlatform(url: string): MediaMetadata['platform'] {
 }
 
 function buildBaseArgs(url?: string, forceCookies = false): string[] {
-  const args: string[] = ['--no-warnings', '--no-playlist', '--js-runtimes', 'node'];
+  const isYoutube = url ? detectPlatform(url) === 'youtube' : false;
+  const args: string[] = ['--no-warnings', '--js-runtimes', 'node'];
+  // Hanya sertakan --no-playlist untuk YouTube agar link playlist panjang tidak terunduh massal,
+  // namun biarkan playlist aktif untuk Instagram/Threads/X agar carousel foto dapat terbaca.
+  if (isYoutube) {
+    args.push('--no-playlist');
+  }
   if (config.cookiesPath && fs.existsSync(config.cookiesPath)) {
-    const isYoutube = url ? detectPlatform(url) === 'youtube' : false;
-    // Di YouTube, cookie sesi akun Google dari browser sering memicu "The page needs to be reloaded"
-    // Oleh karena itu, cookie hanya disertakan untuk platform non-YouTube atau jika diminta secara eksplisit
     if (!isYoutube || forceCookies) {
       args.push('--cookies', config.cookiesPath);
     }
@@ -84,7 +90,12 @@ export const downloaderService = {
    * Mengambil metadata media tanpa mengunduh file utuh (Pre-check)
    */
   async getMediaInfo(url: string): Promise<MediaMetadata> {
-    const args = [...buildBaseArgs(url), '--dump-json', url];
+    const args = [
+      ...buildBaseArgs(url),
+      '--dump-single-json',
+      '--ignore-no-formats-error',
+      url
+    ];
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 35000); // 35 detik batas waktu fetch metadata
 
@@ -94,43 +105,136 @@ export const downloaderService = {
         args,
         {
           signal: controller.signal,
-          maxBuffer: 10 * 1024 * 1024,
+          maxBuffer: 15 * 1024 * 1024,
           env: { ...process.env, PYTHONWARNINGS: 'ignore' }
         },
-        (err, stdout, stderr) => {
+        async (err, stdout, stderr) => {
           clearTimeout(timeout);
-          if (err) {
-            const cleanErr = stderr
-              ? stderr
-                  .split('\n')
-                  .map(l => l.trim())
-                  .filter(l => l.length > 0 && !l.toLowerCase().includes('deprecated feature'))
-                  .join('\n')
-              : err.message;
-            return reject(new Error(`Gagal membaca info media: ${cleanErr || err.message}`));
+
+          // 1. Coba parse output stdout terlebih dahulu
+          // (yt-dlp mencetak data metadata JSON ke stdout meskipun keluar dengan status non-zero jika hanya menemukan foto)
+          if (stdout && stdout.trim().length > 0) {
+            try {
+              let jsonStr = stdout.trim();
+              const firstBrace = jsonStr.indexOf('{');
+              const lastBrace = jsonStr.lastIndexOf('}');
+              if (firstBrace !== -1 && lastBrace !== -1) {
+                jsonStr = jsonStr.slice(firstBrace, lastBrace + 1);
+              }
+              const data = JSON.parse(jsonStr);
+
+              // 1a. Cek apakah ini berupa Playlist / Carousel (seperti Instagram Carousel / Threads Album)
+              if (data._type === 'playlist' || Array.isArray(data.entries)) {
+                const entries: any[] = (data.entries || []).filter(Boolean);
+                const hasAnyVideo = entries.some(
+                  e => Array.isArray(e.formats) && e.formats.some((f: any) => f.vcodec && f.vcodec !== 'none')
+                );
+
+                // Jika bukan video murni (misalnya carousel foto), kumpulkan URL foto beresolusi tinggi
+                if (!hasAnyVideo) {
+                  const photoUrls: string[] = [];
+                  for (const entry of entries) {
+                    let photoUrl = entry.thumbnail;
+                    if (Array.isArray(entry.thumbnails) && entry.thumbnails.length > 0) {
+                      const sorted = [...entry.thumbnails].sort(
+                        (a, b) => ((b.width || 0) * (b.height || 0)) - ((a.width || 0) * (a.height || 0))
+                      );
+                      photoUrl = sorted[0].url || photoUrl;
+                    }
+                    if (photoUrl) {
+                      photoUrls.push(photoUrl);
+                    }
+                  }
+
+                  if (photoUrls.length > 0) {
+                    return resolve({
+                      id: data.id || 'album',
+                      title: data.title || data.description?.slice(0, 100) || 'Photo Album',
+                      extractor: data.extractor_key || data.extractor || 'unknown',
+                      platform: detectPlatform(url),
+                      isOverLimit: false,
+                      mediaType: photoUrls.length > 1 ? 'album' : 'photo',
+                      photoUrls
+                    });
+                  }
+                }
+              }
+
+              // 1b. Cek apakah ini single item tanpa format video/audio (Single Photo)
+              const hasVideo = Array.isArray(data.formats) && data.formats.some((f: any) => f.vcodec && f.vcodec !== 'none');
+              const hasAudio = Array.isArray(data.formats) && data.formats.some((f: any) => f.acodec && f.acodec !== 'none');
+
+              if (!hasVideo && !hasAudio) {
+                let photoUrl = data.thumbnail;
+                if (Array.isArray(data.thumbnails) && data.thumbnails.length > 0) {
+                  const sorted = [...data.thumbnails].sort(
+                    (a, b) => ((b.width || 0) * (b.height || 0)) - ((a.width || 0) * (a.height || 0))
+                  );
+                  photoUrl = sorted[0].url || photoUrl;
+                }
+
+                if (photoUrl) {
+                  return resolve({
+                    id: data.id || 'photo',
+                    title: data.title || 'Photo',
+                    extractor: data.extractor_key || data.extractor || 'unknown',
+                    platform: detectPlatform(url),
+                    isOverLimit: false,
+                    mediaType: 'photo',
+                    photoUrls: [photoUrl]
+                  });
+                }
+              }
+
+              // 1c. Jika ada stream video, proses sebagai video normal
+              const sizeBytes = data.filesize || data.filesize_approx || 0;
+              const sizeMb = sizeBytes > 0 ? sizeBytes / (1024 * 1024) : 0;
+              const isOverLimit = sizeMb > config.maxFileSizeMb;
+
+              return resolve({
+                id: data.id || 'media',
+                title: data.title || 'Untitled Media',
+                duration: data.duration,
+                filesizeApproxBytes: sizeBytes,
+                filesizeApproxMb: Math.round(sizeMb * 10) / 10,
+                thumbnail: data.thumbnail,
+                extractor: data.extractor_key || data.extractor || 'unknown',
+                platform: detectPlatform(url),
+                isOverLimit,
+                mediaType: 'video',
+                raw: data
+              });
+            } catch {
+              // Jika parsing gagal, teruskan ke fallback provider
+            }
           }
 
+          // 2. Fallback provider ke photoService jika yt-dlp gagal menghasilkan data
           try {
-            const data = JSON.parse(stdout);
-            const sizeBytes = data.filesize || data.filesize_approx || 0;
-            const sizeMb = sizeBytes > 0 ? sizeBytes / (1024 * 1024) : 0;
-            const isOverLimit = sizeMb > config.maxFileSizeMb;
+            const photoInfo = await photoService.getPhotoInfo(url);
+            if (photoInfo && photoInfo.photoUrls.length > 0) {
+              return resolve({
+                id: photoInfo.id,
+                title: photoInfo.title,
+                extractor: photoInfo.platform,
+                platform: detectPlatform(url),
+                isOverLimit: false,
+                mediaType: photoInfo.mediaType,
+                photoUrls: photoInfo.photoUrls
+              });
+            }
+          } catch {}
 
-            resolve({
-              id: data.id || 'media',
-              title: data.title || 'Untitled Media',
-              duration: data.duration,
-              filesizeApproxBytes: sizeBytes,
-              filesizeApproxMb: Math.round(sizeMb * 10) / 10,
-              thumbnail: data.thumbnail,
-              extractor: data.extractor_key || data.extractor || 'unknown',
-              platform: detectPlatform(url),
-              isOverLimit,
-              raw: data
-            });
-          } catch (parseErr) {
-            reject(new Error('Gagal mengurai respons metadata dari yt-dlp'));
-          }
+          // 3. Jika semua upaya ekstraksi gagal, kembalikan pesan error yang bersih
+          const cleanErr = stderr
+            ? stderr
+                .split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 0 && !l.toLowerCase().includes('deprecated feature'))
+                .join(' ')
+            : err?.message || 'Gagal membaca metadata media';
+
+          return reject(new Error(`Gagal membaca info media: ${cleanErr}`));
         }
       );
     });
