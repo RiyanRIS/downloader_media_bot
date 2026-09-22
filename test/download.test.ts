@@ -27,6 +27,12 @@ const targets: TestTarget[] = [
     expectedPlatform: 'instagram',
     formatOption: 'video',
   },
+  {
+    name: 'Twitter/X Video',
+    url: 'https://x.com/txiokatu/status/1537852176525139971',
+    expectedPlatform: 'twitter',
+    formatOption: 'video',
+  },
 ];
 
 async function runDownloadTests() {

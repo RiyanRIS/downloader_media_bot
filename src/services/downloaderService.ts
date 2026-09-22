@@ -12,7 +12,7 @@ export interface MediaMetadata {
   filesizeApproxMb?: number;
   thumbnail?: string;
   extractor: string;
-  platform: 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'threads' | 'generic';
+  platform: 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'threads' | 'facebook' | 'reddit' | 'pinterest' | 'bilibili' | 'generic';
   isOverLimit: boolean;
   raw?: any;
 }
@@ -35,6 +35,10 @@ export function detectPlatform(url: string): MediaMetadata['platform'] {
   if (lower.includes('instagram.com')) return 'instagram';
   if (lower.includes('twitter.com') || lower.includes('x.com')) return 'twitter';
   if (lower.includes('threads.net')) return 'threads';
+  if (lower.includes('facebook.com') || lower.includes('fb.watch') || lower.includes('fb.com')) return 'facebook';
+  if (lower.includes('reddit.com') || lower.includes('redd.it')) return 'reddit';
+  if (lower.includes('pinterest.') || lower.includes('pin.it')) return 'pinterest';
+  if (lower.includes('bilibili.') || lower.includes('b23.tv')) return 'bilibili';
   return 'generic';
 }
 

@@ -71,7 +71,7 @@ src/
 ### Tabel `downloads_log`
 * `id` (INTEGER PK AUTOINCREMENT)
 * `telegram_id` (INTEGER FK ke `users.telegram_id`)
-* `platform` (TEXT): `'youtube'`, `'tiktok'`, `'instagram'`, `'twitter'`, `'threads'`, `'generic'`
+* `platform` (TEXT): `'youtube'`, `'tiktok'`, `'instagram'`, `'twitter'`, `'threads'`, `'facebook'`, `'reddit'`, `'pinterest'`, `'bilibili'`, `'generic'`
 * `url` (TEXT): URL media yang diunduh
 * `file_type` (TEXT): `'video'` | `'audio'`
 * `file_size_bytes` (INTEGER, Nullable): Ukuran file dalam bytes

@@ -8,7 +8,17 @@ const SUPPORTED_PATTERNS = [
   /instagram\.com/i,
   /twitter\.com/i,
   /x\.com/i,
-  /threads\.net/i
+  /threads\.net/i,
+  /facebook\.com/i,
+  /fb\.watch/i,
+  /fb\.com/i,
+  /reddit\.com/i,
+  /redd\.it/i,
+  /pinterest\./i,
+  /pin\.it/i,
+  /bilibili\.tv/i,
+  /bilibili\.com/i,
+  /b23\.tv/i
 ];
 
 export function extractMediaUrl(text: string): string | null {

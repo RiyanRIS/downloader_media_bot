@@ -14,7 +14,7 @@
 ## 🌟 Fitur Unggulan
 
 ### 📥 1. Multi-Platform Media Downloader
-* **Platform yang Didukung:** YouTube, TikTok (tanpa watermark), Instagram (Reels/Post), X (Twitter), dan Threads.
+* **Platform yang Didukung:** YouTube, TikTok (tanpa watermark), Instagram (Reels/Post), X (Twitter), Threads, Facebook (Video/Reels), Reddit (Video), Pinterest (Video Pin), dan Bilibili / Bstation.
 * **Pre-check Batas 50MB Telegram:** Deteksi ukuran file sebelum mengunduh via metadata `yt-dlp`. Jika estimasi video $> 48\text{ MB}$, bot otomatis menawarkan opsi **Unduh Audio MP3 Saja** untuk menghindari kegagalan kirim.
 * **Pilihan Format & Resolusi Dinamis:** Dukungan pilihan resolusi YouTube (`720p`, `360p`, atau `MP3 Audio`) menggunakan Inline Keyboard.
 * **Live Dynamic Progress:** Notifikasi status interaktif bertahap:

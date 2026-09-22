@@ -3,6 +3,7 @@ import { userRepository } from '../src/database/repositories/userRepository.js';
 import { downloadRepository } from '../src/database/repositories/downloadRepository.js';
 import { settingsRepository } from '../src/database/repositories/settingsRepository.js';
 import { extractMediaUrl } from '../src/bot/middlewares/urlDetector.js';
+import { detectPlatform } from '../src/services/downloaderService.js';
 import { systemService } from '../src/services/systemService.js';
 import { closeDatabase } from '../src/database/db.js';
 
@@ -95,6 +96,27 @@ async function runTests() {
 
     const threadsUrl = extractMediaUrl('https://www.threads.net/@user/post/C9xyz');
     assert(threadsUrl === 'https://www.threads.net/@user/post/C9xyz', 'Extract Threads URL');
+
+    const fbUrl = extractMediaUrl('video seru di https://www.facebook.com/watch/?v=123456');
+    assert(fbUrl === 'https://www.facebook.com/watch/?v=123456', 'Extract Facebook URL');
+
+    const redditUrl = extractMediaUrl('cek https://reddit.com/r/videos/comments/xyz123/funny_video/');
+    assert(redditUrl === 'https://reddit.com/r/videos/comments/xyz123/funny_video/', 'Extract Reddit URL');
+
+    const pinUrl = extractMediaUrl('pin ini https://pin.it/7aBcDeF keren');
+    assert(pinUrl === 'https://pin.it/7aBcDeF', 'Extract Pinterest URL');
+
+    const biliUrl = extractMediaUrl('nonton https://www.bilibili.tv/id/video/4790000 mantap');
+    assert(biliUrl === 'https://www.bilibili.tv/id/video/4790000', 'Extract Bilibili TV URL');
+
+    const b23Url = extractMediaUrl('link short https://b23.tv/xyz123');
+    assert(b23Url === 'https://b23.tv/xyz123', 'Extract Bilibili b23.tv URL');
+
+    assert(detectPlatform('https://www.facebook.com/watch/?v=123') === 'facebook', 'Detect Facebook platform');
+    assert(detectPlatform('https://reddit.com/r/funny/comments/123') === 'reddit', 'Detect Reddit platform');
+    assert(detectPlatform('https://pin.it/abc') === 'pinterest', 'Detect Pinterest platform');
+    assert(detectPlatform('https://www.bilibili.tv/id/video/123') === 'bilibili', 'Detect Bilibili TV platform');
+    assert(detectPlatform('https://b23.tv/123') === 'bilibili', 'Detect Bilibili shortlink platform');
 
     const nonMedia = extractMediaUrl('https://google.com/search?q=test');
     assert(nonMedia === null, 'Ignore non-supported domain');

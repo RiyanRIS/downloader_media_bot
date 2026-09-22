@@ -54,7 +54,11 @@ startComposer.command('start', async ctx => {
     `• TikTok (Video No Watermark & Audio)\n` +
     `• Instagram (Reels / Post / Stories)\n` +
     `• X / Twitter (Video & MP3)\n` +
-    `• Threads\n\n` +
+    `• Threads\n` +
+    `• Facebook (Video & Reels)\n` +
+    `• Reddit (Video)\n` +
+    `• Pinterest (Video Pin)\n` +
+    `• Bilibili / Bstation (Video Anime & Drama)\n\n` +
     `Ketik /help untuk panduan lengkap atau /profile untuk melihat akun Anda.`;
 
   await ctx.reply(welcomeText, { parse_mode: 'HTML' });
@@ -64,7 +68,7 @@ startComposer.command('help', async ctx => {
   const helpText =
     `📖 <b>Panduan Penggunaan Bot</b>\n\n` +
     `1. <b>Cara Mengunduh Media:</b>\n` +
-    `   Cukup salin dan tempelkan tautan video dari YouTube, TikTok, Instagram, X/Twitter, atau Threads ke obrolan ini.\n` +
+    `   Cukup salin dan tempelkan tautan video dari YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, atau Bilibili ke obrolan ini.\n` +
     `   Pilih format yang diinginkan (Video atau Audio MP3).\n\n` +
     `2. <b>Daftar Perintah Pengguna:</b>\n` +
     `   • /start - Menampilkan pesan awal dan info status.\n` +
