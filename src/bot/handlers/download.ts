@@ -18,6 +18,7 @@ interface PendingDownload {
   createdAt: number;
   mediaType?: 'video' | 'audio' | 'photo' | 'album';
   photoUrls?: string[];
+  directDownloadUrl?: string;
 }
 
 const pendingDownloads = new Map<string, PendingDownload>();
@@ -79,7 +80,8 @@ downloadComposer.on('message:text', async (ctx, next) => {
       title: info.title,
       createdAt: Date.now(),
       mediaType: info.mediaType,
-      photoUrls: info.photoUrls
+      photoUrls: info.photoUrls,
+      directDownloadUrl: info.directDownloadUrl
     });
 
     const keyboard = new InlineKeyboard();
@@ -90,15 +92,35 @@ downloadComposer.on('message:text', async (ctx, next) => {
       keyboard.text(`🖼️ Unduh Album (${info.photoUrls?.length || 0} Foto)`, `dl:${requestId}:album`);
     } else if (info.isOverLimit) {
       // Jika ukuran video melebihi 48MB (batas Telegram)
+      const hasDirectUrl = Boolean(info.directDownloadUrl && info.platform !== 'youtube');
+
+      if (hasDirectUrl) {
+        keyboard.url('🌐 Unduh Langsung via Browser', info.directDownloadUrl!);
+        keyboard.row();
+      }
       keyboard.text('🎧 Unduh Audio MP3 Saja', `dl:${requestId}:audio`);
-      
+
+      let overLimitNote = '';
+      if (hasDirectUrl) {
+        overLimitNote =
+          `Telegram Bot API membatasi upload maksimal 50 MB.\n\n` +
+          `✨ <b>Solusi:</b> Anda dapat mengklik tombol <b>🌐 Unduh Langsung via Browser</b> di bawah untuk mengunduh video ukuran penuh langsung ke memori ponsel Anda tanpa membebani STB, atau unduh versi Audio MP3:`;
+      } else if (info.platform === 'youtube') {
+        overLimitNote =
+          `Telegram Bot API membatasi upload maksimal 50 MB.\n\n` +
+          `ℹ️ <i>Video YouTube ukuran penuh diproteksi IP oleh Google sehingga tidak dapat dibagikan via tautan langsung. Anda tetap dapat mengunduh versi audionya:</i>`;
+      } else {
+        overLimitNote =
+          `Telegram Bot API membatasi upload maksimal 50 MB. Video ini tidak dapat diunggah sebagai video utuh, namun Anda dapat mengunduh versi audionya:`;
+      }
+
       await ctx.api.editMessageText(
         ctx.chat.id,
         statusMsg.message_id,
         `⚠️ <b>Peringatan Batas Ukuran:</b>\n\n` +
         `📹 <b>Judul:</b> ${escapeHtml(info.title)}\n` +
         `📦 <b>Estimasi Ukuran:</b> ~${info.filesizeApproxMb} MB\n\n` +
-        `Telegram Bot API membatasi upload maksimal 50 MB. Video ini tidak dapat diunggah sebagai video utuh, namun Anda dapat mengunduh versi audionya:`,
+        overLimitNote,
         { reply_markup: keyboard, parse_mode: 'HTML' }
       );
       return;
@@ -286,13 +308,20 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
     // Cek batas upload Telegram Bot API (50 MB)
     if (downloadResult.fileSizeBytes > 50 * 1024 * 1024) {
       const sizeMb = (downloadResult.fileSizeBytes / (1024 * 1024)).toFixed(1);
+      const overLimitKb = new InlineKeyboard();
+      if (pending.directDownloadUrl && pending.platform !== 'youtube') {
+        overLimitKb.url('🌐 Unduh Langsung via Browser', pending.directDownloadUrl);
+        overLimitKb.row();
+      }
+      overLimitKb.text('🎧 Unduh Audio MP3 Saja', `dl:${requestId}:audio`);
+
       await ctx.api.editMessageText(
         chatId,
         statusMsgId,
         `⚠️ <b>Ukuran File Melebihi Batas Telegram:</b>\n\n` +
         `File hasil unduhan berukuran <b>${sizeMb} MB</b>, sedangkan batas maksimal upload Telegram Bot API adalah <b>50 MB</b>.\n\n` +
-        `💡 <i>Saran: Silakan coba unduh versi 360p atau pilih opsi Audio MP3.</i>`,
-        { parse_mode: 'HTML' }
+        `💡 <i>Silakan gunakan tombol di bawah untuk mengunduh langsung ke browser ponsel Anda tanpa melalui server Telegram, atau pilih versi Audio MP3:</i>`,
+        { reply_markup: overLimitKb, parse_mode: 'HTML' }
       ).catch(() => {});
       return;
     }

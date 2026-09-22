@@ -3,7 +3,7 @@ import { userRepository } from '../src/database/repositories/userRepository.js';
 import { downloadRepository } from '../src/database/repositories/downloadRepository.js';
 import { settingsRepository } from '../src/database/repositories/settingsRepository.js';
 import { extractMediaUrl } from '../src/bot/middlewares/urlDetector.js';
-import { detectPlatform } from '../src/services/downloaderService.js';
+import { detectPlatform, findBestDirectUrl } from '../src/services/downloaderService.js';
 import { photoService } from '../src/services/photoService.js';
 import { systemService } from '../src/services/systemService.js';
 import { closeDatabase } from '../src/database/db.js';
@@ -101,6 +101,9 @@ async function runTests() {
     const fbUrl = extractMediaUrl('video seru di https://www.facebook.com/watch/?v=123456');
     assert(fbUrl === 'https://www.facebook.com/watch/?v=123456', 'Extract Facebook URL');
 
+    const fbPageVideoUrl = extractMediaUrl('https://www.facebook.com/61594527111015/videos/2185507088679087/?__so__=discover&__rv__=video_home_www_loe_popular_videos&locale=id_ID');
+    assert(fbPageVideoUrl === 'https://www.facebook.com/reel/2185507088679087/', 'Normalize Facebook page video URL to canonical Reel URL');
+
     const redditUrl = extractMediaUrl('cek https://reddit.com/r/videos/comments/xyz123/funny_video/');
     assert(redditUrl === 'https://reddit.com/r/videos/comments/xyz123/funny_video/', 'Extract Reddit URL');
 
@@ -132,6 +135,17 @@ async function runTests() {
     downloadRepository.logDownload(testUserId, 'instagram', 'https://instagram.com/p/abc123/', 'album', 3500000);
     const updatedStats = downloadRepository.getStats();
     assert(updatedStats.byPlatform['instagram'] >= 1, 'Instagram album download logged');
+
+    // 7. Uji findBestDirectUrl
+    const mockYtDlpData = {
+      formats: [
+        { url: 'https://cdn.example.com/audio.mp3', vcodec: 'none', acodec: 'mp3' },
+        { url: 'https://cdn.example.com/video_720.mp4', vcodec: 'h264', acodec: 'aac', height: 720 },
+        { url: 'https://cdn.example.com/video_360.mp4', vcodec: 'h264', acodec: 'aac', height: 360 },
+      ]
+    };
+    const bestUrl = findBestDirectUrl(mockYtDlpData);
+    assert(bestUrl === 'https://cdn.example.com/video_720.mp4', 'findBestDirectUrl picks highest combined resolution');
 
     // 7. Uji System Service Health
     const health = await systemService.getHealth();

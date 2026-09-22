@@ -15,6 +15,7 @@ export interface MediaMetadata {
   extractor: string;
   platform: 'youtube' | 'tiktok' | 'instagram' | 'twitter' | 'threads' | 'facebook' | 'reddit' | 'pinterest' | 'bilibili' | 'generic';
   isOverLimit: boolean;
+  directDownloadUrl?: string;
   mediaType?: 'video' | 'audio' | 'photo' | 'album';
   photoUrls?: string[];
   raw?: any;
@@ -63,6 +64,47 @@ function buildBaseArgs(url?: string, forceCookies = false): string[] {
     args.push('--ffmpeg-location', config.ffmpegPath);
   }
   return args;
+}
+
+/**
+ * Mencari tautan unduh/streaming langsung terbaik dari metadata yt-dlp
+ */
+export function findBestDirectUrl(data: any): string | undefined {
+  if (!data) return undefined;
+
+  if (Array.isArray(data.formats) && data.formats.length > 0) {
+    // 1. Cari format gabungan (video + audio) dengan protokol HTTP/HTTPS langsung
+    const combinedFormats = data.formats.filter(
+      (f: any) =>
+        f.url &&
+        typeof f.url === 'string' &&
+        f.url.startsWith('http') &&
+        f.vcodec && f.vcodec !== 'none' &&
+        f.acodec && f.acodec !== 'none' &&
+        (!f.protocol || f.protocol === 'https' || f.protocol === 'http' || !f.protocol.includes('m3u8'))
+    );
+
+    if (combinedFormats.length > 0) {
+      combinedFormats.sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+      return combinedFormats[0].url;
+    }
+
+    // 2. Jika tidak ada format gabungan murni, cari format video langsung apa pun
+    const anyVideoWithUrl = data.formats
+      .filter((f: any) => f.url && typeof f.url === 'string' && f.url.startsWith('http') && f.vcodec && f.vcodec !== 'none')
+      .sort((a: any, b: any) => (b.height || 0) - (a.height || 0));
+
+    if (anyVideoWithUrl.length > 0) {
+      return anyVideoWithUrl[0].url;
+    }
+  }
+
+  // 3. Fallback ke data.url
+  if (typeof data.url === 'string' && data.url.startsWith('http')) {
+    return data.url;
+  }
+
+  return undefined;
 }
 
 export const downloaderService = {
@@ -190,6 +232,7 @@ export const downloaderService = {
               const sizeBytes = data.filesize || data.filesize_approx || 0;
               const sizeMb = sizeBytes > 0 ? sizeBytes / (1024 * 1024) : 0;
               const isOverLimit = sizeMb > config.maxFileSizeMb;
+              const directDownloadUrl = findBestDirectUrl(data);
 
               return resolve({
                 id: data.id || 'media',
@@ -201,6 +244,7 @@ export const downloaderService = {
                 extractor: data.extractor_key || data.extractor || 'unknown',
                 platform: detectPlatform(url),
                 isOverLimit,
+                directDownloadUrl,
                 mediaType: 'video',
                 raw: data
               });
