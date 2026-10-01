@@ -10,6 +10,7 @@ import { adminComposer } from './handlers/admin.js';
 import { gameComposer } from './handlers/game.js';
 import { downloadComposer } from './handlers/download.js';
 import { topupComposer } from './handlers/topup.js';
+import { ticTacToeComposer } from './handlers/tictactoe.js';
 
 export function createBot(): Bot<MyContext> {
   if (!config.botToken) {
@@ -34,6 +35,7 @@ export function createBot(): Bot<MyContext> {
   bot.use(vipComposer);
   bot.use(adminComposer);
   bot.use(gameComposer);
+  bot.use(ticTacToeComposer);
   bot.use(downloadComposer);
 
   return bot;

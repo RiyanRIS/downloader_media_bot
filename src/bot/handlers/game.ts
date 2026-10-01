@@ -4,6 +4,7 @@ import { userRepository } from '../../database/repositories/userRepository.js';
 import { getRandomQuiz, QUIZ_QUESTIONS } from '../../games/quizData.js';
 import { getRandomTebakGambar, generateClue, TebakGambarItem } from '../../games/tebakGambarData.js';
 import { getRandomFamily100, cleanAnswerText, Family100Item } from '../../games/family100Data.js';
+import { sendTttMenu } from './tictactoe.js';
 import { escapeHtml } from '../../utils/format.js';
 
 export const gameComposer = new Composer<MyContext>();
@@ -79,6 +80,7 @@ gameComposer.command(['games', 'game'], async ctx => {
     `⭐ <b>Level & EXP:</b> ${badge.emoji} Level ${badge.level} (${badge.title} - ${user.exp} EXP)\n` +
     `🏆 <b>Statistik Main:</b> ${user.games_won} menang / ${user.games_played} main (${winRate}% win rate)\n\n` +
     `<b>Pilihan Permainan:</b>\n` +
+    `• ❌⭕ <b>Tic Tac Toe</b> (/ttt atau /tictactoe) - Duel 3x3 asah taktik vs Bot AI atau tantang teman!\n` +
     `• 👨‍👩‍👧‍👦 <b>Family 100</b> (/family100 atau /f100) - Survei membuktikan (+2 koin &amp; +1 EXP per jawaban)!\n` +
     `• 🖼️ <b>Tebak Gambar</b> (/tebakgambar atau /tg) - Hadiah +4 koin (+2 koin jika clue), gagal -5 koin!\n` +
     `• 🎲 <b>Dadu Keberuntungan</b> (/dice) - Lawan bot lempar dadu fisik!\n` +
@@ -89,18 +91,19 @@ gameComposer.command(['games', 'game'], async ctx => {
     `• 💳 <b>Beli Koin</b> (/topup) - Beli koin instan via QRIS Otomatis!`;
 
   const keyboard = new InlineKeyboard()
+    .text('❌⭕ Tic Tac Toe', 'game:nav:ttt')
     .text('👨‍👩‍👧‍👦 Family 100', 'game:nav:family100')
+    .row()
     .text('🖼️ Tebak Gambar', 'game:nav:tebakgambar')
-    .row()
     .text('🎲 Main Dadu', 'game:nav:dice')
+    .row()
     .text('🎰 Putar Slot', 'game:nav:slot')
-    .row()
     .text('🧩 Kuis Pilihan Ganda', 'game:nav:quiz')
+    .row()
     .text('🎁 Klaim Harian', 'game:action:claim')
-    .row()
     .text('👑 Tukar VIP', 'game:action:exchange')
-    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
     .row()
+    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
     .text('💳 Beli Koin (QRIS)', 'topup:menu');
 
   await ctx.reply(menuText, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -1020,17 +1023,20 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       `Pilih salah satu menu atau game berikut:`;
 
     const keyboard = new InlineKeyboard()
+      .text('❌⭕ Tic Tac Toe', 'game:nav:ttt')
       .text('👨‍👩‍👧‍👦 Family 100', 'game:nav:family100')
+      .row()
       .text('🖼️ Tebak Gambar', 'game:nav:tebakgambar')
-      .row()
       .text('🎲 Main Dadu', 'game:nav:dice')
+      .row()
       .text('🎰 Putar Slot', 'game:nav:slot')
-      .row()
       .text('🧩 Kuis Pilihan Ganda', 'game:nav:quiz')
-      .text('🎁 Klaim Harian', 'game:action:claim')
       .row()
+      .text('🎁 Klaim Harian', 'game:action:claim')
       .text('🔄 Tukar Koin', 'game:action:exchange')
-      .text('🏆 Peringkat', 'game:action:leaderboard');
+      .row()
+      .text('🏆 Peringkat', 'game:action:leaderboard')
+      .text('💳 Beli Koin (QRIS)', 'topup:menu');
 
     try {
       await ctx.editMessageText(menuText, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -1160,6 +1166,12 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       `Yuk coba tebak gambar yang lain!`,
       { parse_mode: 'HTML', reply_markup: surrenderKeyboard }
     );
+    return;
+  }
+
+  if (data === 'game:nav:ttt') {
+    console.log(`[Game] User ${userId} clicked Tic Tac Toe menu`);
+    await sendTttMenu(ctx);
     return;
   }
 
@@ -1384,4 +1396,6 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     }
     return;
   }
+
+  return next();
 });
