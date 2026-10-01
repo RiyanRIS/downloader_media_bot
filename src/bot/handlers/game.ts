@@ -50,6 +50,15 @@ interface ActiveFamily100Session {
 }
 const activeFamily100 = new Map<number, ActiveFamily100Session>();
 
+export function getLevelBadge(exp: number): { level: number; title: string; emoji: string } {
+  const level = Math.floor(exp / 100) + 1;
+  if (level >= 50) return { level, title: 'Legenda', emoji: '⚡' };
+  if (level >= 30) return { level, title: 'Sultan', emoji: '👑' };
+  if (level >= 15) return { level, title: 'Pendekar', emoji: '🛡️' };
+  if (level >= 5) return { level, title: 'Petualang', emoji: '⚔️' };
+  return { level, title: 'Pemula', emoji: '🌱' };
+}
+
 // -------------------------------------------------------------
 // 1. Dashboard Menu Utama Games (/games atau /game)
 // -------------------------------------------------------------
@@ -58,25 +67,26 @@ gameComposer.command(['games', 'game'], async ctx => {
   const user = userRepository.getUser(ctx.user.telegram_id);
   if (!user) return;
 
-  const level = Math.floor(user.exp / 100) + 1;
+  const badge = getLevelBadge(user.exp);
   const winRate = user.games_played > 0 
     ? ((user.games_won / user.games_played) * 100).toFixed(1) 
     : '0';
 
   const menuText =
     `🎮 <b>Arena Permainan & Mini-Games</b>\n\n` +
-    `Halo <b>${escapeHtml(ctx.from?.first_name)}</b>! Kumpulkan koin dan tukarkan dengan kuota unduhan ekstra.\n\n` +
+    `Halo <b>${escapeHtml(ctx.from?.first_name)}</b>! Kumpulkan koin untuk mendownload media atau menaikkan level EXP.\n\n` +
     `💰 <b>Saldo Koin:</b> <code>${user.coins}</code> Koin\n` +
-    `⭐ <b>Level & EXP:</b> Level ${level} (${user.exp} EXP)\n` +
-    `🏆 <b>Statistik Main:</b> ${user.games_won} menang / ${user.games_played} main (${winRate}%)\n\n` +
+    `⭐ <b>Level & EXP:</b> ${badge.emoji} Level ${badge.level} (${badge.title} - ${user.exp} EXP)\n` +
+    `🏆 <b>Statistik Main:</b> ${user.games_won} menang / ${user.games_played} main (${winRate}% win rate)\n\n` +
     `<b>Pilihan Permainan:</b>\n` +
     `• 👨‍👩‍👧‍👦 <b>Family 100</b> (/family100 atau /f100) - Survei membuktikan (+2 koin &amp; +1 EXP per jawaban)!\n` +
-    `• 🖼️ <b>Tebak Gambar</b> (/tebakgambar atau /tg) - Hadiah +4 koin (+2 koin jika pakai clue), gagal -5 koin!\n` +
+    `• 🖼️ <b>Tebak Gambar</b> (/tebakgambar atau /tg) - Hadiah +4 koin (+2 koin jika clue), gagal -5 koin!\n` +
     `• 🎲 <b>Dadu Keberuntungan</b> (/dice) - Lawan bot lempar dadu fisik!\n` +
     `• 🎰 <b>Mesin Slot</b> (/slot) - Putar 3 baris reel untuk dapat jackpot!\n` +
-    `• 🧩 <b>Kuis Tebak-Tebakan</b> (/tebak) - Hadiah +2 koin &amp; +1 EXP, salah/menyerah -5 koin!\n` +
+    `• 🧩 <b>Kuis Tebak-Tebakan</b> (/tebak) - Asah otak (+2 koin &amp; +5 EXP)!\n` +
     `• 🎁 <b>Klaim Harian</b> (/claim) - Bonus +50 koin gratis setiap hari!\n` +
-    `• 🔄 <b>Tukar Koin</b> (/tukar) - Ubah koin jadi kuota unduhan bot!`;
+    `• 🔄 <b>Tukar Koin</b> (/tukar) - Tukar koin game jadi Status VIP 30 Hari!\n` +
+    `• 💳 <b>Beli Koin</b> (/topup) - Beli koin instan via QRIS Otomatis!`;
 
   const keyboard = new InlineKeyboard()
     .text('👨‍👩‍👧‍👦 Family 100', 'game:nav:family100')
@@ -88,8 +98,10 @@ gameComposer.command(['games', 'game'], async ctx => {
     .text('🧩 Kuis Pilihan Ganda', 'game:nav:quiz')
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
-    .text('🔄 Tukar Koin', 'game:action:exchange')
-    .text('🏆 Papan Peringkat', 'game:action:leaderboard');
+    .text('👑 Tukar VIP', 'game:action:exchange')
+    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
+    .row()
+    .text('💳 Beli Koin (QRIS)', 'topup:menu');
 
   await ctx.reply(menuText, { parse_mode: 'HTML', reply_markup: keyboard });
 });
@@ -102,22 +114,26 @@ gameComposer.command(['koin', 'saldo', 'dompet'], async ctx => {
   const user = userRepository.getUser(ctx.user.telegram_id);
   if (!user) return;
 
-  const level = Math.floor(user.exp / 100) + 1;
-  const effectiveLimit = userRepository.getEffectiveLimit(user);
+  const badge = getLevelBadge(user.exp);
+  const roleBadge = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
+  const winRate = user.games_played > 0 ? ((user.games_won / user.games_played) * 100).toFixed(1) : '0';
 
   const text =
-    `👛 <b>Dompet & Statistik Game</b>\n\n` +
+    `👛 <b>Dompet & Statistik Pemain</b>\n\n` +
     `• <b>ID Pengguna:</b> <code>${user.telegram_id}</code>\n` +
-    `• <b>Saldo Koin:</b> <b>${user.coins}</b> Koin\n` +
-    `• <b>Peringkat Level:</b> Level ${level} (${user.exp} EXP)\n` +
+    `• <b>Status Akun:</b> ${roleBadge}\n` +
+    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b>\n` +
+    `• <b>Peringkat Level:</b> ${badge.emoji} Level ${badge.level} (${badge.title} - ${user.exp} EXP)\n` +
     `• <b>Total Permainan:</b> ${user.games_played} kali\n` +
-    `• <b>Kemenangan:</b> ${user.games_won} kali\n` +
-    `• <b>Sisa Kuota Bot:</b> ${Math.max(0, effectiveLimit - user.daily_usage)} / ${effectiveLimit} unduhan\n\n` +
-    `💡 <i>Kumpulkan minimal 100 koin untuk ditukarkan menjadi kuota unduhan tambahan (/tukar).</i>`;
+    `• <b>Kemenangan:</b> ${user.games_won} kali (${winRate}% win rate)\n\n` +
+    `💡 <i>Gunakan koin untuk mendownload video/lagu, bermain game, atau kumpulkan 1.500 koin untuk ditukar menjadi status VIP (/tukar).</i>`;
 
   const keyboard = new InlineKeyboard()
     .text('🎁 Klaim Koin Gratis', 'game:action:claim')
-    .text('🔄 Tukar Kuota', 'game:action:exchange')
+    .text('💳 Beli Koin (QRIS)', 'topup:menu')
+    .row()
+    .text('👑 Tukar VIP', 'game:action:exchange')
+    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
     .row()
     .text('🎮 Buka Menu Game', 'game:nav:menu');
 
@@ -724,13 +740,9 @@ async function sendNewQuiz(ctx: MyContext, userId: number) {
   await ctx.reply(quizText, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
-// -------------------------------------------------------------
-// 7. Papan Peringkat (/leaderboard, /topgame, /topkoin)
-// -------------------------------------------------------------
-gameComposer.command(['leaderboard', 'topgame', 'topkoin'], async ctx => {
-  const leaders = userRepository.getGameLeaderboard(10);
-
-  let text = `🏆 <b>PAPAN PERINGKAT PEMAIN TERKAYA</b> 🏆\n\n`;
+export function renderCoinsLeaderboard(): { text: string; keyboard: InlineKeyboard } {
+  const leaders = userRepository.getCoinsLeaderboard(10);
+  let text = `🏆 <b>PAPAN PERINGKAT: 10 PEMAIN TERKAYA (KOIN)</b> 🪙\n\n`;
 
   if (leaders.length === 0) {
     text += `<i>Belum ada pemain yang terdaftar. Mulai main sekarang!</i>`;
@@ -738,48 +750,88 @@ gameComposer.command(['leaderboard', 'topgame', 'topkoin'], async ctx => {
     leaders.forEach((player, idx) => {
       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `<b>${idx + 1}.</b>`;
       const name = player.username ? `@${escapeHtml(player.username)}` : `User ${player.telegram_id}`;
-      const level = Math.floor(player.exp / 100) + 1;
-      text += `${medal} ${name} — <b>${player.coins}</b> Koin (Lv.${level}, ${player.games_won}x win)\n`;
+      const badge = getLevelBadge(player.exp);
+      text += `${medal} ${name} — <b>${player.coins} Koin</b> (${badge.emoji} Lv.${badge.level} ${badge.title}, ${player.games_won}x win)\n`;
     });
   }
 
-  text += `\n💡 <i>Tingkatkan terus koinmu dengan memenangkan game dan mengklaim bonus harian!</i>`;
+  text += `\n💡 <i>Kumpulkan koin dari mini-games, klaim harian, atau beli via QRIS di /topup!</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🎮 Main Sekarang', 'game:nav:menu')
-    .text('🎁 Klaim Harian', 'game:action:claim');
+    .text('⭐ Lihat Top EXP / Level', 'game:leaderboard:exp')
+    .row()
+    .text('🎮 Main Game', 'game:nav:menu')
+    .text('💳 Beli Koin', 'topup:menu');
 
+  return { text, keyboard };
+}
+
+export function renderExpLeaderboard(): { text: string; keyboard: InlineKeyboard } {
+  const leaders = userRepository.getExpLeaderboard(10);
+  let text = `⭐ <b>PAPAN PERINGKAT: 10 MASTER EXP & LEVEL</b> 🎖️\n\n`;
+
+  if (leaders.length === 0) {
+    text += `<i>Belum ada pemain yang terdaftar. Mulai main sekarang!</i>`;
+  } else {
+    leaders.forEach((player, idx) => {
+      const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `<b>${idx + 1}.</b>`;
+      const name = player.username ? `@${escapeHtml(player.username)}` : `User ${player.telegram_id}`;
+      const badge = getLevelBadge(player.exp);
+      text += `${medal} ${name} — <b>${player.exp} EXP</b> (${badge.emoji} Lv.${badge.level} ${badge.title}, 💰 ${player.coins} koin)\n`;
+    });
+  }
+
+  text += `\n💡 <i>EXP didapatkan dari setiap kemenangan game, klaim harian, dan mengunduh media!</i>`;
+
+  const keyboard = new InlineKeyboard()
+    .text('🪙 Lihat Top Koin (Terkaya)', 'game:leaderboard:coins')
+    .row()
+    .text('🎮 Main Game', 'game:nav:menu')
+    .text('💳 Beli Koin', 'topup:menu');
+
+  return { text, keyboard };
+}
+
+// -------------------------------------------------------------
+// 7. Papan Peringkat (/leaderboard, /topgame, /topkoin, /topexp)
+// -------------------------------------------------------------
+gameComposer.command(['leaderboard', 'topgame', 'topkoin', 'topcoin'], async ctx => {
+  const { text, keyboard } = renderCoinsLeaderboard();
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+});
+
+gameComposer.command(['topexp', 'toplevel'], async ctx => {
+  const { text, keyboard } = renderExpLeaderboard();
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 });
 
 // -------------------------------------------------------------
-// 8. Tukar Koin ke Kuota (/tukar, /exchange)
+// 8. Tukar Koin Game ke Status VIP (/tukar, /exchange)
 // -------------------------------------------------------------
 gameComposer.command(['tukar', 'exchange'], async ctx => {
   if (!ctx.user) return;
   const user = userRepository.getUser(ctx.user.telegram_id);
   if (!user) return;
 
-  const currentLimit = userRepository.getEffectiveLimit(user);
+  const roleText = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
 
   const text =
-    `🔄 <b>TUKAR KOIN KE KUOTA UNDUHAN</b>\n\n` +
-    `Koin yang Anda menangkan dari permainan dapat ditukarkan menjadi batas kuota unduhan bot ekstra!\n\n` +
+    `🔄 <b>TUKAR KOIN GAME KE STATUS VIP</b>\n\n` +
+    `Rajin main game? Koin kemenangan Anda bisa ditukarkan menjadi <b>Status Akun VIP</b> tanpa perlu bayar sepeser pun!\n\n` +
     `💰 <b>Saldo Koin Anda:</b> <code>${user.coins}</code> Koin\n` +
-    `📥 <b>Kuota Saat Ini:</b> <b>${currentLimit}</b> unduhan/hari\n\n` +
-    `<b>Pilih Paket Penukaran:</b>\n` +
-    `1. <b>Paket Mini:</b> 100 Koin ➜ <b>+5 Kuota Harian</b>\n` +
-    `2. <b>Paket Super:</b> 180 Koin ➜ <b>+10 Kuota Harian</b> (Hemat 20 Koin!)\n` +
-    `3. <b>Paket Sultan:</b> 400 Koin ➜ <b>+25 Kuota Harian</b> (Hemat 100 Koin!)`;
+    `🔰 <b>Status Saat Ini:</b> ${roleText}\n\n` +
+    `<b>Pilihan Penukaran VIP:</b>\n` +
+    `• 🌟 <b>VIP 7 Hari:</b> 500 Koin (Bebas download tanpa potong koin!)\n` +
+    `• 👑 <b>VIP 30 Hari:</b> 1.500 Koin (Bebas download sepuasnya 1 bulan full!)\n\n` +
+    `<i>Keuntungan VIP: Seluruh unduhan media YouTube, TikTok, IG, FB, dll. GRATIS 0 koin!</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('📦 Tukar 100 Koin (+5 Kuota)', 'game:exchange:100:5')
+    .text('🌟 Tukar VIP 7 Hari (500 Koin)', 'game:exchange:vip:7:500')
     .row()
-    .text('📦 Tukar 180 Koin (+10 Kuota)', 'game:exchange:180:10')
+    .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
     .row()
-    .text('📦 Tukar 400 Koin (+25 Kuota)', 'game:exchange:400:25')
-    .row()
-    .text('🎮 Buka Menu Games', 'game:nav:menu');
+    .text('💳 Beli Koin Instan (QRIS)', 'topup:menu')
+    .text('🎮 Arena Games', 'game:nav:menu');
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 });
@@ -1149,31 +1201,64 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     return;
   }
 
-  if (data === 'game:action:leaderboard') {
-    const leaders = userRepository.getGameLeaderboard(10);
-    let text = `🏆 <b>PAPAN PERINGKAT TOP 10</b> 🏆\n\n`;
-    leaders.forEach((p, idx) => {
-      const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `${idx + 1}.`;
-      const name = p.username ? `@${escapeHtml(p.username)}` : `User ${p.telegram_id}`;
-      text += `${medal} ${name} — <b>${p.coins} Koin</b> (${p.games_won}x win)\n`;
-    });
-    await ctx.reply(text, { parse_mode: 'HTML' });
+  if (data === 'game:action:leaderboard' || data === 'game:leaderboard:coins') {
+    const { text, keyboard } = renderCoinsLeaderboard();
+    if (ctx.callbackQuery?.message) {
+      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
+        await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+      });
+    } else {
+      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    }
+    return;
+  }
+
+  if (data === 'game:leaderboard:exp') {
+    const { text, keyboard } = renderExpLeaderboard();
+    if (ctx.callbackQuery?.message) {
+      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
+        await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+      });
+    } else {
+      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    }
     return;
   }
 
   if (data === 'game:action:exchange') {
     const user = userRepository.getUser(userId);
     if (!user) return;
-    const currentLimit = userRepository.getEffectiveLimit(user);
+    const roleText = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
     const text =
-      `🔄 <b>Tukar Koin ke Kuota</b>\nSaldo Koin: <b>${user.coins}</b> | Kuota: <b>${currentLimit}</b>/hari\n\nPilih paket:`;
+      `🔄 <b>Tukar Koin ke Status VIP</b>\n` +
+      `Saldo Koin: <b>${user.coins} Koin</b> | Status: <b>${roleText}</b>\n\n` +
+      `Pilih paket penukaran VIP:\n` +
+      `• 🌟 <b>VIP 7 Hari:</b> 500 Koin\n` +
+      `• 👑 <b>VIP 30 Hari:</b> 1.500 Koin\n\n` +
+      `<i>Status VIP memberikan keuntungan unduhan GRATIS tanpa potong koin!</i>`;
     const keyboard = new InlineKeyboard()
-      .text('📦 100 Koin ➜ +5 Kuota', 'game:exchange:100:5')
+      .text('🌟 Tukar VIP 7 Hari (500 Koin)', 'game:exchange:vip:7:500')
       .row()
-      .text('📦 180 Koin ➜ +10 Kuota', 'game:exchange:180:10')
+      .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
       .row()
-      .text('📦 400 Koin ➜ +25 Kuota', 'game:exchange:400:25');
+      .text('💳 Beli Koin (QRIS)', 'topup:menu')
+      .text('🎮 Menu Games', 'game:nav:menu');
+
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    return;
+  }
+
+  if (data.startsWith('game:exchange:vip:')) {
+    const parts = data.split(':');
+    const days = parseInt(parts[3], 10);
+    const cost = parseInt(parts[4], 10);
+
+    const result = userRepository.exchangeCoinsForVip(userId, cost, days);
+    if (result.success) {
+      await ctx.reply(result.message, { parse_mode: 'HTML' });
+    } else {
+      await ctx.reply(`⚠️ ${result.message}`, { parse_mode: 'HTML' });
+    }
     return;
   }
 

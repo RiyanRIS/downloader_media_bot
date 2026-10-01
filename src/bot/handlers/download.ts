@@ -5,6 +5,7 @@ import { downloaderService, downloadQueue } from '../../services/downloaderServi
 import { photoService, PhotoDownloadResult } from '../../services/photoService.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { downloadRepository } from '../../database/repositories/downloadRepository.js';
+import { config } from '../../config/config.js';
 import { escapeHtml } from '../../utils/format.js';
 
 export const downloadComposer = new Composer<MyContext>();
@@ -52,15 +53,28 @@ downloadComposer.on('message:text', async (ctx, next) => {
 
   const user = userRepository.getUser(from.id)!;
 
-  // 1. Cek kuota harian pengguna
-  const effectiveLimit = userRepository.getEffectiveLimit(user);
-  if (user.daily_usage >= effectiveLimit) {
+  // 1. Cek biaya koin pengguna (VIP & Admin bebas unduh / 0 koin)
+  const isPrivileged = user.role === 'admin' || user.role === 'vip';
+  const downloadCost = isPrivileged ? 0 : config.coinCostDownload;
+
+  if (!isPrivileged && user.coins < downloadCost) {
+    const shortageKeyboard = new InlineKeyboard()
+      .text('🎮 Main Game Cari Koin', 'game:nav:menu')
+      .text('🎁 Klaim Harian', 'game:action:claim')
+      .row()
+      .text('💳 Beli Koin Instan (QRIS)', 'topup:menu')
+      .text('🔗 Ajak Teman (+50 Koin)', 'start:ref');
+
     await ctx.reply(
-      `⚠️ <b>Kuota Harian Anda Telah Habis!</b>\n\n` +
-      `Anda telah mencapai batas <b>${effectiveLimit} unduhan</b> hari ini.\n` +
-      `Kuota akan direset otomatis setiap pukul 00:00 WIB.\n\n` +
-      `💡 <i>Gunakan perintah /ref untuk mengajak teman dan mendapatkan kuota tambahan, atau kirim bukti transfer untuk upgrade ke VIP.</i>`,
-      { parse_mode: 'HTML' }
+      `⚠️ <b>Koin Anda Tidak Cukup!</b>\n\n` +
+      `Untuk mengunduh media ini membutuhkan <b>${downloadCost} Koin</b>.\n` +
+      `Saldo koin Anda saat ini: 💰 <b>${user.coins} Koin</b>.\n\n` +
+      `<b>Cara mudah mendapatkan koin:</b>\n` +
+      `• Mainkan mini-games seru di /games\n` +
+      `• Klaim bonus koin harian di /claim\n` +
+      `• Undang teman bergabung via /ref (+50 Koin)\n` +
+      `• Beli koin cepat via QRIS otomatis di /topup`,
+      { parse_mode: 'HTML', reply_markup: shortageKeyboard }
     );
     return;
   }
@@ -180,6 +194,19 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
     return;
   }
 
+  // Cek saldo koin sebelum memulai proses antrean download
+  const currentUser = userRepository.getUser(pending.userId);
+  const isPrivileged = currentUser?.role === 'admin' || currentUser?.role === 'vip';
+  const downloadCost = isPrivileged ? 0 : config.coinCostDownload;
+
+  if (!isPrivileged && currentUser && currentUser.coins < downloadCost) {
+    await ctx.answerCallbackQuery({
+      text: `⚠️ Koin tidak cukup! Butuh ${downloadCost} koin (Saldo Anda: ${currentUser.coins} koin). Ketik /topup untuk beli koin.`,
+      show_alert: true
+    });
+    return;
+  }
+
   await ctx.answerCallbackQuery();
   pendingDownloads.delete(requestId);
 
@@ -230,8 +257,18 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
         { parse_mode: 'HTML' }
       ).catch(() => {});
 
+      // Potong koin dan beri reward EXP loyalitas
+      if (!isPrivileged) {
+        userRepository.deductCoins(pending.userId, downloadCost);
+      }
+      userRepository.addCoins(pending.userId, 0, 2);
+      const userAfter = userRepository.getUser(pending.userId);
+      const coinBadge = isPrivileged
+        ? '🌟 <i>VIP Member (Gratis Unduh)</i>'
+        : `💰 <b>Biaya:</b> ${downloadCost} Koin | <b>Sisa:</b> ${userAfter?.coins ?? 0} Koin (+2 EXP)`;
+
       const cleanTitle = escapeHtml(pending.title.slice(0, 900));
-      const caption = `🖼️ <b>${cleanTitle}</b>\n\n🤖 Diunduh via @${ctx.me.username}`;
+      const caption = `🖼️ <b>${cleanTitle}</b>\n\n${coinBadge}\n🤖 Diunduh via @${ctx.me.username}`;
 
       if (photoResult.photos.length === 1) {
         const single = photoResult.photos[0];
@@ -334,10 +371,20 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
       { parse_mode: 'HTML' }
     ).catch(() => {});
 
+    // Potong koin dan beri reward EXP loyalitas
+    if (!isPrivileged) {
+      userRepository.deductCoins(pending.userId, downloadCost);
+    }
+    userRepository.addCoins(pending.userId, 0, 2);
+    const userAfter = userRepository.getUser(pending.userId);
+    const coinBadge = isPrivileged
+      ? '🌟 <i>VIP Member (Gratis Unduh)</i>'
+      : `💰 <b>Biaya:</b> ${downloadCost} Koin | <b>Sisa:</b> ${userAfter?.coins ?? 0} Koin (+2 EXP)`;
+
     // Kirim file ke pengguna
     const inputFile = new InputFile(downloadResult.filePath, downloadResult.fileName);
     const cleanTitle = escapeHtml(pending.title.slice(0, 900));
-    const caption = `🎬 <b>${cleanTitle}</b>\n\n🤖 Diunduh via @${ctx.me.username}`;
+    const caption = `🎬 <b>${cleanTitle}</b>\n\n${coinBadge}\n🤖 Diunduh via @${ctx.me.username}`;
 
     if (downloadResult.mimeType === 'audio') {
       try {

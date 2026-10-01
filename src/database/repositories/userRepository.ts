@@ -196,7 +196,12 @@ export const userRepository = {
     };
   },
 
-  getGameLeaderboard(limit = 10): { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[] {
+  setCoins(telegramId: number, amount: number): boolean {
+    const info = db.prepare('UPDATE users SET coins = ? WHERE telegram_id = ?').run(Math.max(0, amount), telegramId);
+    return info.changes > 0;
+  },
+
+  getCoinsLeaderboard(limit = 10): { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[] {
     return db.prepare(`
       SELECT telegram_id, username, coins, exp, games_won 
       FROM users 
@@ -204,6 +209,53 @@ export const userRepository = {
       ORDER BY coins DESC, exp DESC 
       LIMIT ?
     `).all(limit) as { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[];
+  },
+
+  getExpLeaderboard(limit = 10): { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[] {
+    return db.prepare(`
+      SELECT telegram_id, username, coins, exp, games_won 
+      FROM users 
+      WHERE is_banned = 0 
+      ORDER BY exp DESC, coins DESC 
+      LIMIT ?
+    `).all(limit) as { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[];
+  },
+
+  getGameLeaderboard(limit = 10): { telegram_id: number; username: string | null; coins: number; exp: number; games_won: number }[] {
+    return this.getCoinsLeaderboard(limit);
+  },
+
+  exchangeCoinsForVip(telegramId: number, costCoins = 1500, days = 30): { success: boolean; remainingCoins: number; message: string } {
+    const user = this.getUser(telegramId);
+    if (!user) {
+      return { success: false, remainingCoins: 0, message: 'Pengguna tidak ditemukan.' };
+    }
+
+    if (user.coins < costCoins) {
+      return {
+        success: false,
+        remainingCoins: user.coins,
+        message: `Koin Anda tidak cukup! Membutuhkan ${costCoins} koin, saldo Anda saat ini: ${user.coins} koin.`
+      };
+    }
+
+    const deducted = this.deductCoins(telegramId, costCoins);
+    if (!deducted) {
+      return {
+        success: false,
+        remainingCoins: user.coins,
+        message: 'Gagal memotong saldo koin. Silakan coba beberapa saat lagi.'
+      };
+    }
+
+    this.setRole(telegramId, 'vip', days);
+    const updated = this.getUser(telegramId)!;
+
+    return {
+      success: true,
+      remainingCoins: updated.coins,
+      message: `🎉 **Selamat!** Anda berhasil menukar **${costCoins} Koin** menjadi **Status VIP ${days} Hari**!\nKini Anda dapat menikmati seluruh unduhan media tanpa batas dan bebas potong koin!`
+    };
   },
 
   exchangeCoinsForQuota(telegramId: number, costCoins = 100, quotaBonus = 5): { success: boolean; newLimit: number; remainingCoins: number; message: string } {

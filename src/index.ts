@@ -71,6 +71,15 @@ async function bootstrap() {
   process.once('SIGTERM', stopApp);
 }
 
+// Tangani unhandled rejection & uncaught exception agar proses Node v24 tidak crash seketika
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ [Unhandled Rejection at Promise]:', reason);
+});
+
+process.on('uncaughtException', err => {
+  console.error('⚠️ [Uncaught Exception]:', err);
+});
+
 bootstrap().catch(err => {
   console.error('Fatal bootstrap error:', err);
   process.exit(1);

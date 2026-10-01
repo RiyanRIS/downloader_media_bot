@@ -21,6 +21,10 @@ vipComposer.on('message:photo', async ctx => {
 
   const keyboard = new InlineKeyboard()
     .text('✅ Konfirmasi VIP 30 Hari', `confirm_vip:${from.id}:30`)
+    .row()
+    .text('✅ +500 Koin', `confirm_coins:${from.id}:500`)
+    .text('✅ +1.200 Koin', `confirm_coins:${from.id}:1200`)
+    .row()
     .text('❌ Tolak', `reject_vip:${from.id}`);
 
   const adminCaption =
@@ -118,3 +122,34 @@ vipComposer.callbackQuery(/^reject_vip:(\d+)$/, async ctx => {
     { parse_mode: 'HTML' }
   ).catch(() => {});
 });
+
+// Callback Query: Admin mengonfirmasi penambahan koin manual
+vipComposer.callbackQuery(/^confirm_coins:(\d+):(\d+)$/, async ctx => {
+  const adminId = ctx.from.id;
+  if (!config.isAdmin(adminId)) {
+    await ctx.answerCallbackQuery({ text: '⛔ Anda bukan Admin!', show_alert: true });
+    return;
+  }
+
+  const targetUserId = parseInt(ctx.match[1], 10);
+  const amount = parseInt(ctx.match[2], 10);
+
+  userRepository.addCoins(targetUserId, amount, Math.floor(amount / 10));
+  const updatedUser = userRepository.getUser(targetUserId);
+
+  await ctx.answerCallbackQuery({ text: `Berhasil menambahkan +${amount} Koin!` });
+  const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
+
+  await ctx.editMessageCaption({
+    caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (+${amount} Koin)`,
+    parse_mode: 'HTML',
+    reply_markup: undefined
+  }).catch(() => {});
+
+  await ctx.api.sendMessage(
+    targetUserId,
+    `🎉 <b>Pembayaran Anda Telah Diverifikasi!</b>\n\nAdmin telah menambahkan <b>+${amount} Koin</b> ke akun Anda.\nSaldo koin Anda sekarang: 💰 <b>${updatedUser?.coins ?? 0} Koin</b>.`,
+    { parse_mode: 'HTML' }
+  ).catch(() => {});
+});
+

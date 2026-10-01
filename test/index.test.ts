@@ -6,6 +6,9 @@ import { extractMediaUrl } from '../src/bot/middlewares/urlDetector.js';
 import { detectPlatform, findBestDirectUrl } from '../src/services/downloaderService.js';
 import { photoService } from '../src/services/photoService.js';
 import { systemService } from '../src/services/systemService.js';
+import { transactionRepository } from '../src/database/repositories/transactionRepository.js';
+import { duitkuService } from '../src/services/duitkuService.js';
+import { getLevelBadge } from '../src/bot/handlers/game.js';
 import { closeDatabase } from '../src/database/db.js';
 
 async function runTests() {
@@ -184,10 +187,55 @@ async function runTests() {
     assert(exchangeRes.success === true, 'exchangeCoinsForQuota converts 100 coins into +5 quota');
     assert(exchangeRes.newLimit >= 10, 'Effective limit increased after exchange');
 
-    // Uji Leaderboard
-    const leaderboard = userRepository.getGameLeaderboard(5);
-    assert(Array.isArray(leaderboard) && leaderboard.length > 0, 'getGameLeaderboard returns top players');
-    assert(leaderboard[0].coins >= (leaderboard[1]?.coins ?? 0), 'Leaderboard sorted by coins descending');
+    // Uji Leaderboard Koin & EXP Terpisah
+    const coinsLeaderboard = userRepository.getCoinsLeaderboard(5);
+    assert(Array.isArray(coinsLeaderboard) && coinsLeaderboard.length > 0, 'getCoinsLeaderboard returns top players by coins');
+    assert(coinsLeaderboard[0].coins >= (coinsLeaderboard[1]?.coins ?? 0), 'Coins leaderboard sorted by coins descending');
+
+    const expLeaderboard = userRepository.getExpLeaderboard(5);
+    assert(Array.isArray(expLeaderboard) && expLeaderboard.length > 0, 'getExpLeaderboard returns top players by exp');
+    assert(expLeaderboard[0].exp >= (expLeaderboard[1]?.exp ?? 0), 'Exp leaderboard sorted by exp descending');
+
+    // Uji Penukaran Koin Game ke VIP 30 Hari
+    userRepository.setCoins(testUserId, 2000);
+    const vipExchangeRes = userRepository.exchangeCoinsForVip(testUserId, 1500, 30);
+    assert(vipExchangeRes.success === true, 'exchangeCoinsForVip converts 1500 coins to VIP');
+    const vipExchangedUser = userRepository.getUser(testUserId)!;
+    assert(vipExchangedUser.role === 'vip', 'User role updated to VIP after exchange');
+    assert(vipExchangedUser.coins === 500, '1500 coins deducted after VIP exchange (2000 - 1500 = 500)');
+
+    // Uji Level Badge Helper
+    const badgePemula = getLevelBadge(50);
+    assert(badgePemula.level === 1 && badgePemula.title === 'Pemula', 'Level badge for 50 exp is Pemula (Lv.1)');
+    const badgeSultan = getLevelBadge(3200);
+    assert(badgeSultan.level === 33 && badgeSultan.title === 'Sultan', 'Level badge for 3200 exp is Sultan (Lv.33)');
+
+    // 10. Uji Repository Transaksi & Duitku Service
+    const testOrderId = `TEST_ORDER_${Date.now()}`;
+    const tx = transactionRepository.createTransaction({
+      telegramId: testUserId,
+      merchantOrderId: testOrderId,
+      packageId: 'pro',
+      amount: 10000,
+      coins: 500
+    });
+    assert(tx.merchant_order_id === testOrderId, 'Transaction created with PENDING status');
+    assert(tx.status === 'PENDING', 'Initial transaction status is PENDING');
+
+    const updateSuccess = transactionRepository.updateStatus(testOrderId, 'SUCCESS', 'REF123456');
+    assert(updateSuccess === true, 'Transaction status updated to SUCCESS');
+    const updatedTx = transactionRepository.getTransaction(testOrderId)!;
+    assert(updatedTx.status === 'SUCCESS' && updatedTx.paid_at !== null, 'Transaction reflects SUCCESS status with paid_at timestamp');
+
+    // Uji Duitku Signature MD5
+    const testSig = duitkuService.generateInquirySignature('MERCHANT01', 'ORDER01', 10000, 'KEY01');
+    assert(typeof testSig === 'string' && testSig.length === 32, 'Duitku MD5 inquiry signature is 32-char hex string');
+
+    // Uji Pembuatan QRIS (Mode Simulasi / Buffer PNG)
+    const qrisResult = await duitkuService.createQrisTransaction(testUserId, 'pro', 'test_user');
+    assert(qrisResult.success === true, 'createQrisTransaction returns success');
+    assert(Buffer.isBuffer(qrisResult.qrBuffer) && qrisResult.qrBuffer.length > 0, 'createQrisTransaction produces valid PNG QR buffer');
+    assert(qrisResult.packageInfo.coins === 500, 'Selected package gives 500 coins');
 
     // Uji Kuis Dataset
     const sampleQuiz = (await import('../src/games/quizData.js')).getRandomQuiz();
@@ -210,7 +258,10 @@ async function runTests() {
     failed++;
   } finally {
     // Reset state user uji
-    userRepository.setCustomLimit(testUserId, null as any);
+    try {
+      userRepository.setCustomLimit(testUserId, null as any);
+    } catch {}
+    closeDatabase();
   }
 
   if (failed > 0) {

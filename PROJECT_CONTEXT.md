@@ -126,10 +126,11 @@ src/
 
 | Perintah | Akses | Fungsi |
 |---|---|---|
-| `/start` | Semua | Pesan pembuka, info akun, aktivasi referral |
-| `/help` | Semua | Panduan lengkap platform & aturan ukuran file |
-| `/profile` | Semua | Cek status role, sisa kuota hari ini, masa aktif VIP |
-| `/ref` | Semua | Tautan referral & statistik teman yang diundang |
+| `/start` | Semua | Pesan pembuka, saldo koin, aktivasi referral (+50 koin) |
+| `/help` | Semua | Panduan lengkap platform, sistem koin & topup QRIS |
+| `/profile` | Semua | Cek status role, saldo koin, level EXP, statistik akun |
+| `/ref` | Semua | Tautan referral (+50 koin per teman baru) |
+| `/topup` / `/belikoin` | Semua | Beli koin instan via QRIS Otomatis (Duitku) |
 | `/games` | Semua | Dashboard arena mini-games & katalog game |
 | `/family100` / `/f100` | Semua | Game kuis survei Family 100 (60s, +2 koin/+1 exp, -10 koin jika 0) |
 | `/nyerah_f100` | Semua | Menyerah dari ronde Family 100 yang sedang aktif |
@@ -138,20 +139,23 @@ src/
 | `/dice <taruhan>` | Semua | Lempar dadu lawan bot |
 | `/slot <taruhan>` | Semua | Mesin slot jackpot |
 | `/tebak` | Semua | Kuis pilihan ganda (+2 koin, salah/menyerah -5 koin) |
-| `/claim` | Semua | Klaim harian +50 koin |
-| `/koin` | Semua | Cek saldo koin dan level |
-| `/tukar` | Semua | Tukar koin game ke kuota unduhan |
-| `/leaderboard` | Semua | Papan peringkat 10 pemain terkaya |
+| `/claim` | Semua | Klaim harian +50 koin gratis |
+| `/koin` / `/saldo` | Semua | Cek saldo koin, level EXP, dan menu top-up |
+| `/tukar` | Semua | Tukar koin game ke Status VIP 30 Hari (1.500 koin) |
+| `/leaderboard` / `/topkoin` | Semua | Papan peringkat 10 pemain terkaya (koin) |
+| `/topexp` / `/toplevel` | Semua | Papan peringkat 10 pemain level tertinggi (EXP) |
 | `/health` | Admin | Diagnostik real-time CPU temp, RAM, Disk, Uptime |
-| `/stats` | Admin | Total user, VIP, total download per platform |
+| `/stats` | Admin | Total user, omset penjualan QRIS, total download |
 | `/backup` | Admin | Kirim berkas `bot.db` langsung ke Telegram |
 | `/cleancache` | Admin | Bersihkan cache RAM Linux (`drop_caches`) |
 | `/reboot` | Admin | Reboot STB jarak jauh dengan dialog konfirmasi |
 | `/speedtest` | Admin | Tes kecepatan jaringan STB (payload 10MB) |
 | `/updatedlp` | Admin | Perbarui binary `yt-dlp` on-demand (`yt-dlp -U`) |
+| `/addkoin <id> <jml>` | Admin | Tambah saldo koin pengguna manual |
+| `/delkoin <id> <jml>` | Admin | Kurangi saldo koin pengguna manual |
+| `/setkoin <id> <jml>` | Admin | Atur saldo koin pengguna manual |
 | `/addvip <id> <hari>` | Admin | Beri status VIP manual |
 | `/delvip <id>` | Admin | Cabut status VIP |
-| `/setlimit <id> <kuota>` | Admin | Atur custom limit harian pengguna |
 | `/ban <id>` / `/unban <id>` | Admin | Blokir / buka blokir pengguna |
 | `/broadcast <pesan>` | Admin | Siaran massal dengan jeda aman anti-flood (maks 25 msg/s) |
 

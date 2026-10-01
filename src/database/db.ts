@@ -19,8 +19,23 @@ db.pragma('temp_store = MEMORY');
 db.pragma('cache_size = -2000'); // Batasi cache SQLite ~2MB agar hemat RAM
 db.pragma('foreign_keys = ON');
 
+// Statement cache untuk mengoptimalkan performa dan mencegah alokasi/deallokasi Statement berulang oleh V8 GC
+const statementCache = new Map<string, any>();
+const originalPrepare = db.prepare.bind(db);
+
+(db as any).prepare = function (sql: string) {
+  const trimmed = sql.trim();
+  let stmt = statementCache.get(trimmed);
+  if (!stmt) {
+    stmt = originalPrepare(trimmed);
+    statementCache.set(trimmed, stmt);
+  }
+  return stmt;
+};
+
 export function closeDatabase(): void {
   try {
+    statementCache.clear();
     db.close();
   } catch (err) {
     console.error('Error saat menutup database:', err);

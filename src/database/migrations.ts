@@ -22,6 +22,7 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
     CREATE INDEX IF NOT EXISTS idx_users_referrer ON users(referrer_id);
     CREATE INDEX IF NOT EXISTS idx_users_coins ON users(coins);
+    CREATE INDEX IF NOT EXISTS idx_users_exp ON users(exp);
   `);
 
   // 2. Tabel downloads_log
@@ -40,7 +41,27 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_downloads_platform ON downloads_log(platform);
   `);
 
-  // 3. Tabel system_settings
+  // 3. Tabel transactions_log (Top-Up QRIS Duitku)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS transactions_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      telegram_id INTEGER NOT NULL,
+      merchant_order_id TEXT NOT NULL UNIQUE,
+      reference TEXT,
+      package_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      coins INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'PENDING',
+      created_at TEXT NOT NULL DEFAULT (DATETIME('now')),
+      paid_at TEXT,
+      FOREIGN KEY (telegram_id) REFERENCES users(telegram_id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_tx_order_id ON transactions_log(merchant_order_id);
+    CREATE INDEX IF NOT EXISTS idx_tx_tg_id ON transactions_log(telegram_id);
+    CREATE INDEX IF NOT EXISTS idx_tx_status ON transactions_log(status);
+  `);
+
+  // 4. Tabel system_settings
   db.exec(`
     CREATE TABLE IF NOT EXISTS system_settings (
       key TEXT PRIMARY KEY,
@@ -56,6 +77,10 @@ export function runMigrations(): void {
   insertSetting.run('free_daily_limit', '5');
   insertSetting.run('vip_daily_limit', '50');
   insertSetting.run('referral_bonus_limit', '5');
+  insertSetting.run('coin_cost_download', '10');
+  insertSetting.run('referral_bonus_coins', '50');
+  insertSetting.run('daily_claim_coins', '50');
+  insertSetting.run('daily_claim_exp', '15');
   insertSetting.run('maintenance_mode', '0');
 
   console.log('✅ Migrasi database SQLite berhasil dijalankan.');

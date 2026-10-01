@@ -9,6 +9,7 @@ import { vipComposer } from './handlers/vip.js';
 import { adminComposer } from './handlers/admin.js';
 import { gameComposer } from './handlers/game.js';
 import { downloadComposer } from './handlers/download.js';
+import { topupComposer } from './handlers/topup.js';
 
 export function createBot(): Bot<MyContext> {
   if (!config.botToken) {
@@ -29,6 +30,7 @@ export function createBot(): Bot<MyContext> {
 
   // Pasang Handlers / Composers
   bot.use(startComposer);
+  bot.use(topupComposer);
   bot.use(vipComposer);
   bot.use(adminComposer);
   bot.use(gameComposer);
@@ -39,5 +41,9 @@ export function createBot(): Bot<MyContext> {
 
 export function launchBot(bot: Bot<MyContext>) {
   console.log('🚀 Memulai bot dengan runner concorrency...');
-  return run(bot);
+  const runner = run(bot);
+  runner.task()?.catch((err: any) => {
+    console.error('❌ [Fatal] Grammy runner terhenti (kemungkinan karena 409 Conflict):', err.message || err);
+  });
+  return runner;
 }

@@ -5,6 +5,7 @@ import { systemService } from '../../services/systemService.js';
 import { downloaderService } from '../../services/downloaderService.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { downloadRepository } from '../../database/repositories/downloadRepository.js';
+import { transactionRepository } from '../../database/repositories/transactionRepository.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -27,6 +28,9 @@ adminComposer.use(async (ctx, next) => {
         ctx.message?.text?.startsWith('/delvip') ||
         ctx.message?.text?.startsWith('/ban') ||
         ctx.message?.text?.startsWith('/unban') ||
+        ctx.message?.text?.startsWith('/addkoin') ||
+        ctx.message?.text?.startsWith('/delkoin') ||
+        ctx.message?.text?.startsWith('/setkoin') ||
         ctx.message?.text?.startsWith('/setlimit')) {
       await ctx.reply('⛔ Perintah ini khusus untuk Admin.');
       return;
@@ -65,12 +69,15 @@ adminComposer.command('stats', async ctx => {
   const userStats = userRepository.getUserStats();
   const dlStats = downloadRepository.getStats();
   const todayCount = downloadRepository.getTodayCount();
+  const txStats = transactionRepository.getStats();
 
   let platformBreakdown = '';
   for (const [plat, count] of Object.entries(dlStats.byPlatform)) {
     platformBreakdown += `• ${plat.toUpperCase()}: ${count}\n`;
   }
   if (!platformBreakdown) platformBreakdown = '• Belum ada transaksi\n';
+
+  const formattedRev = new Intl.NumberFormat('id-ID').format(txStats.totalRevenue);
 
   const statsText =
     `📈 **Statistik Bot & Pengunduhan**\n\n` +
@@ -79,6 +86,9 @@ adminComposer.command('stats', async ctx => {
     `• Pengguna VIP: ${userStats.vip}\n` +
     `• Pengguna Diblokir: ${userStats.banned}\n` +
     `• Total Admin: ${userStats.admins}\n\n` +
+    `💰 **Statistik Penjualan QRIS (Duitku):**\n` +
+    `• Total Omset: Rp ${formattedRev}\n` +
+    `• Top-Up Berhasil: ${txStats.totalSuccess} transaksi\n\n` +
     `📥 **Statistik Unduhan:**\n` +
     `• Unduhan Hari Ini: ${todayCount}\n` +
     `• Total Seluruh Unduhan: ${dlStats.totalDownloads}\n\n` +
@@ -222,6 +232,89 @@ adminComposer.command('setlimit', async ctx => {
   } else {
     await ctx.reply('❌ User ID tidak ditemukan di database.');
   }
+});
+
+// 10b. /addkoin <user_id> <jumlah>
+adminComposer.command('addkoin', async ctx => {
+  const parts = ctx.match?.trim().split(/\s+/);
+  if (!parts || parts.length < 2) {
+    await ctx.reply('ℹ️ Format salah. Gunakan: `/addkoin <user_id> <jumlah>`\nContoh: `/addkoin 123456789 500`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const targetId = parseInt(parts[0], 10);
+  const amount = parseInt(parts[1], 10);
+
+  if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
+    await ctx.reply('❌ ID atau jumlah koin tidak valid.');
+    return;
+  }
+
+  const user = userRepository.getUser(targetId);
+  if (!user) {
+    await ctx.reply('❌ User ID tidak ditemukan di database.');
+    return;
+  }
+
+  userRepository.addCoins(targetId, amount, 0);
+  const updated = userRepository.getUser(targetId)!;
+
+  await ctx.reply(`✅ Berhasil menambahkan *+${amount} Koin* ke user \`${targetId}\`.\nSaldo sekarang: *${updated.coins} Koin*.`, { parse_mode: 'Markdown' });
+  await ctx.api.sendMessage(targetId, `🎉 **Bonus Koin dari Admin!**\nAdmin telah menambahkan *+${amount} Koin* ke akun Anda.\nSaldo koin Anda saat ini: *${updated.coins} Koin*.`, { parse_mode: 'Markdown' }).catch(() => {});
+});
+
+// 10c. /delkoin <user_id> <jumlah>
+adminComposer.command('delkoin', async ctx => {
+  const parts = ctx.match?.trim().split(/\s+/);
+  if (!parts || parts.length < 2) {
+    await ctx.reply('ℹ️ Format salah. Gunakan: `/delkoin <user_id> <jumlah>`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const targetId = parseInt(parts[0], 10);
+  const amount = parseInt(parts[1], 10);
+
+  if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
+    await ctx.reply('❌ ID atau jumlah koin tidak valid.');
+    return;
+  }
+
+  const user = userRepository.getUser(targetId);
+  if (!user) {
+    await ctx.reply('❌ User ID tidak ditemukan di database.');
+    return;
+  }
+
+  userRepository.deductCoins(targetId, amount);
+  const updated = userRepository.getUser(targetId)!;
+
+  await ctx.reply(`✅ Berhasil memotong *${amount} Koin* dari user \`${targetId}\`.\nSisa saldo: *${updated.coins} Koin*.`, { parse_mode: 'Markdown' });
+});
+
+// 10d. /setkoin <user_id> <jumlah>
+adminComposer.command('setkoin', async ctx => {
+  const parts = ctx.match?.trim().split(/\s+/);
+  if (!parts || parts.length < 2) {
+    await ctx.reply('ℹ️ Format salah. Gunakan: `/setkoin <user_id> <jumlah>`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const targetId = parseInt(parts[0], 10);
+  const amount = parseInt(parts[1], 10);
+
+  if (isNaN(targetId) || isNaN(amount) || amount < 0) {
+    await ctx.reply('❌ ID atau jumlah koin tidak valid.');
+    return;
+  }
+
+  const user = userRepository.getUser(targetId);
+  if (!user) {
+    await ctx.reply('❌ User ID tidak ditemukan di database.');
+    return;
+  }
+
+  userRepository.setCoins(targetId, amount);
+  await ctx.reply(`✅ Saldo koin user \`${targetId}\` berhasil diatur menjadi *${amount} Koin*.`, { parse_mode: 'Markdown' });
 });
 
 // 11. /ban & /unban
