@@ -26,6 +26,14 @@ function parseAdminIds(raw?: string): number[] {
     .filter(id => !isNaN(id) && id > 0);
 }
 
+function parseApiKeys(raw?: string): string[] {
+  if (!raw) return [];
+  return raw
+    .split(',')
+    .map(k => k.trim())
+    .filter(k => k.length > 0);
+}
+
 // Menentukan direktori temporary secara aman lintas platform (Windows dev vs Linux STB)
 let resolvedTmpDir = process.env.TMP_DIR;
 if (!resolvedTmpDir || resolvedTmpDir.trim() === '') {
@@ -66,6 +74,10 @@ export const config = {
   enableThermalAlert: getEnvBoolean('ENABLE_THERMAL_ALERT', true),
   thermalAlertTempC: getEnvNumber('THERMAL_ALERT_TEMP_C', 75),
   ramAlertPercent: getEnvNumber('RAM_ALERT_PERCENT', 90),
+  geminiApiKeys: parseApiKeys(process.env.GEMINI_API_KEY),
+  get geminiApiKey(): string {
+    return this.geminiApiKeys[0] || '';
+  },
 
   isAdmin(telegramId: number): boolean {
     return this.adminIds.includes(telegramId);

@@ -10,6 +10,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "test": "tsx test/index.test.ts",
+    "test:expense": "tsx test/expense.test.ts",
     "test:download": "tsx test/download.test.ts"
   },
   "keywords": [
@@ -22,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^2.27.0",
     "@grammyjs/ratelimiter": "^1.2.1",
     "@grammyjs/runner": "^2.0.3",
     "better-sqlite3": "^13.0.3",

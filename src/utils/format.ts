@@ -9,3 +9,10 @@ export function escapeHtml(text?: string | number | null): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
 }
+
+/**
+ * Format angka menjadi format mata uang Rupiah Indonesia (contoh: Rp 25.000)
+ */
+export function formatRupiah(amount: number): string {
+  return 'Rp ' + Math.round(amount).toLocaleString('id-ID');
+}

@@ -10,12 +10,14 @@
   1. Pengunduh media otomatis (YouTube, TikTok, Instagram, X/Twitter, Threads) dengan pre-check batas 50MB Telegram Bot API, pilihan resolusi/MP3, dan antrean `p-limit(2)`.
   2. Manajemen & monitoring server lokal / STB ARM64 (HG680-P / FJ) & Linux x64: `/health`, `/reboot`, `/cleancache`, `/speedtest`, `/updatedlp`.
   3. Sistem tier pengguna: Free (5 limit/hari), VIP (50 limit/hari), Admin (unlimited), referral bonus (+5 limit), dan verifikasi transfer manual 1-klik.
+  4. Pencatatan Keuangan & Dompet Cerdas (AI Gemini): Ekstraksi bahasa santai/gaul (`/catat`), OCR foto struk belanja (`/struk`), rekapitulasi dompet harian & bulanan (`/keuangan`, `/laporan`), serta edit kategori & penambahan catatan interaktif.
 * **Tech Stack:**
   * Node.js (v22/v24 LTS, ESM `"type": "module"`)
   * TypeScript (`tsx` untuk dev, `tsc` untuk build `dist/`)
   * Framework Bot: `grammY` + `@grammyjs/runner` + `@grammyjs/ratelimiter`
   * Database: `better-sqlite3` (Mode WAL, synchronous NORMAL, cache 2MB)
   * Downloader Engine: `yt-dlp` binary + `ffmpeg`
+  * AI Engine: Google Gemini API (`@google/genai`, model default `gemini-flash-latest` & fallback `gemini-flash-lite-latest`)
   * Monitoring: `systeminformation`
   * Concurrency: `p-limit`
 
@@ -26,16 +28,18 @@
 ```
 src/
 ├── config/
-│   └── config.ts                # Load .env, parse ADMIN_IDS, resolve cross-platform tmpDir, typed getters
+│   └── config.ts                # Load .env, parse ADMIN_IDS, resolve cross-platform tmpDir, typed getters (termasuk geminiApiKey & geminiModel)
 ├── database/
 │   ├── db.ts                    # Inisialisasi better-sqlite3 + PRAGMA WAL, foreign_keys ON
-│   ├── migrations.ts            # DDL tabel: users, downloads_log, system_settings & seed default
+│   ├── migrations.ts            # DDL tabel: users, downloads_log, transactions_log, expenses, system_settings & seed default
 │   └── repositories/
 │       ├── userRepository.ts    # CRUD user, tier (user/vip/admin), auto demote expired VIP, referral, ban
 │       ├── downloadRepository.ts# Pencatatan log unduhan & agregasi statistik per platform
+│       ├── expenseRepository.ts # CRUD pengeluaran, rekapitulasi harian/bulanan, breakdown kategori, update notes
 │       └── settingsRepository.ts# Key-value dynamic system config
 ├── services/
 │   ├── downloaderService.ts     # p-limit(2), yt-dlp --dump-json (pre-check <48MB), downloadMedia(), updateYtDlp()
+│   ├── aiExpenseService.ts      # Ekstraksi keuangan teks santai & OCR struk belanja (Gemini Flash, auto-retry 503, fallback)
 │   ├── systemService.ts         # systeminformation (CPU temp, RAM, Disk tmp, Uptime), reboot, drop_caches, speedtest
 │   └── cronService.ts           # Midnight reset kuota (00:00), orphan file cleaner (30m), thermal alert (>75°C)
 ├── games/
@@ -44,15 +48,17 @@ src/
 │   └── family100Data.ts         # Dataset Family 100 plesdisgila (1700+ soal survei) + fallback offline
 ├── bot/
 │   ├── context.ts               # Custom MyContext (menempelkan ctx.user dari authMiddleware)
-│   ├── bot.ts                   # Inisialisasi Bot, error handler, runner launcher
+│   ├── bot.ts                   # Inisialisasi Bot, error handler, runner launcher, pasang semua composers
 │   ├── middlewares/
 │   │   ├── auth.ts              # getOrCreateUser, cek is_banned, pasang ctx.user
 │   │   ├── rateLimit.ts         # @grammyjs/ratelimiter (maks 3 req / 2.5 detik)
 │   │   └── urlDetector.ts       # RegEx extractor YouTube, TikTok, IG, X, FB, Reddit, Pin, Bilibili
 │   └── handlers/
 │       ├── start.ts             # /start (payload referral ?ref=<id>), /help, /profile, /ref
-│       ├── game.ts              # /games, /family100 (/f100, /nyerah_f100), /tebakgambar (/tg, /nyerah), /dice, /slot, /tebak, /claim, /koin, /tukar, /leaderboard
+│       ├── expense.ts           # /catat <cerita>, /struk (foto struk OCR), /keuangan, /laporan, inline edit category/notes/delete
+│       ├── game.ts              # /games, /family100, /tebakgambar, /dice, /slot, /tebak, /claim, /koin, /tukar, /leaderboard
 │       ├── download.ts          # Tangkap link, status progress dinamis, inline button format, upload & unlink
+│       ├── topup.ts             # QRIS Otomatis Duitku
 │       ├── vip.ts               # Forward foto bukti transfer ke Admin + callback konfirmasi/tolak
 │       └── admin.ts             # /health, /stats, /backup, /reboot, /cleancache, /speedtest, /updatedlp, /broadcast
 └── index.ts                     # Bootstrap migrasi, verifikasi binary yt-dlp, startup cleaner, graceful shutdown
@@ -87,6 +93,18 @@ src/
 * `file_size_bytes` (INTEGER, Nullable): Ukuran file dalam bytes
 * `downloaded_at` (TEXT): Timestamp transaksi
 
+### Tabel `expenses`
+* `id` (INTEGER PK AUTOINCREMENT)
+* `telegram_id` (INTEGER FK ke `users.telegram_id`)
+* `amount` (INTEGER): Nominal pengeluaran dalam Rupiah
+* `category` (TEXT): Kategori belanja (`Makanan & Minuman`, `Belanja Harian`, `Transportasi`, `Tagihan & Pulsa`, `Hiburan`, `Kesehatan`, `Lainnya`)
+* `merchant` (TEXT, Nullable): Nama toko / tempat belanja
+* `items_detail` (TEXT, Nullable): Ringkasan item belanja
+* `notes` (TEXT, Nullable): Catatan kustom pengguna (dibuat/diedit interaktif lewat tombol bot)
+* `raw_input` (TEXT, Nullable): Teks mentah masukan pengguna atau `[Foto Struk Belanja]`
+* `source_type` (TEXT): `'text'` atau `'receipt'`
+* `created_at` (TEXT): Timestamp pencatatan (lokal)
+
 ### Tabel `system_settings`
 * `key` (TEXT PK), `value` (TEXT): Konfigurasi dinamis (`free_daily_limit`, `vip_daily_limit`, dll.).
 
@@ -120,14 +138,37 @@ src/
 * Referral via `/start?ref=<id>`: Memberikan bonus limit (+5 unduhan) ke pengajak.
 * Pembayaran: User mengirim foto bukti transfer $\to$ Bot meneruskan ke Admin dengan tombol `[✅ Konfirmasi VIP 30 Hari]` $\to$ 1-klik aktivasi instan tanpa manual query.
 
+### D. Alur Pencatatan Keuangan & Struk Belanja Cerdas (AI Gemini)
+1. **Input Teks Cerita (`/catat <cerita belanja>`)**:
+   * Pengguna menceritakan pengeluaran dengan bahasa bebas / gaul (misal: *"beli soto 15k di pak bro"*, *"bensin 50rb"*, *"ceban"*).
+   * `aiExpenseService.parseExpenseFromText()` memanggil Gemini API dengan prompt terstruktur JSON untuk mengekstrak nominal, toko, item, dan kategori.
+2. **Input Foto Struk Belanja (`/struk` atau foto ber-caption `/struk` / `/catat`)**:
+   * Foto struk diunduh langsung ke memory buffer (`Buffer`), **zero-persistence** tanpa membebani disk/eMMC server.
+   * `aiExpenseService.parseExpenseFromReceipt()` melakukan OCR visi multimodal untuk membaca total bayar, nama merchant, dan item.
+3. **Mekanisme Ketahanan & Failover Multi-Key AI**:
+   * **Multi-Key Failover Pool:** Mendukung lebih dari satu API key (cth: `GEMINI_API_KEY=key1,key2`). Jika Key #1 mencapai batas kuota gratis (`429 RESOURCE_EXHAUSTED`), sistem otomatis beralih (*failover*) ke Key cadangan (#2, #3, dst).
+   * **Model Hierarchy:** Menggunakan alias resmi Google `gemini-flash-latest` (default) dengan fallback berurutan ke `gemini-flash-lite-latest`, `gemini-3.8-flash`, dan `gemini-3.5-flash`.
+   * **Auto-retry 1.5 detik:** Jika Google mengembalikan error lonjakan antrean sesaat (`503 UNAVAILABLE / high demand`).
+4. **Interaktivitas Kartu Pengeluaran**:
+   * `[ 🏷️ Ganti Kategori ]`: Pilihan kategori cepat via inline keyboard.
+   * `[ 📝 Tambahkan Catatan ]` / `[ 📝 Edit Catatan ]`: Mengaktifkan state pending note untuk menambah catatan personal (cth: *"Reimburse kantor"*).
+   * `[ 🗑️ Hapus ]`: Menghapus catatan dari database SQLite.
+5. **Dashboard Dompet (`/keuangan` / `/laporan`)**:
+   * Rekapitulasi pengeluaran hari ini dan bulan ini.
+   * Breakdown per kategori dengan persentase dan ikon.
+   * Daftar 5 riwayat pengeluaran terakhir.
+
 ---
 
 ## 5. Daftar Perintah Bot
 
 | Perintah | Akses | Fungsi |
 |---|---|---|
-| `/start` | Semua | Pesan pembuka, saldo koin, aktivasi referral (+50 koin) |
-| `/help` | Semua | Panduan lengkap platform, sistem koin & topup QRIS |
+| `/start` | Semua | Pesan pembuka, status akun, saldo koin, dan menu fitur |
+| `/help` | Semua | Panduan lengkap platform, downloader, koin, QRIS & pencatat keuangan |
+| `/catat <cerita>` | Semua | Catat pengeluaran instan lewat kalimat cerita belanja (AI) |
+| `/struk` | Semua | Masuk ke mode deteksi & membaca foto struk belanja otomatis (OCR AI) |
+| `/keuangan` / `/laporan` | Semua | Dashboard ringkasan dompet hari ini, bulan ini & rincian kategori |
 | `/profile` | Semua | Cek status role, saldo koin, level EXP, statistik akun |
 | `/ref` | Semua | Tautan referral (+50 koin per teman baru) |
 | `/topup` / `/belikoin` | Semua | Beli koin instan via QRIS Otomatis (Duitku) |
@@ -179,6 +220,7 @@ REFERRAL_BONUS_LIMIT=5
 ENABLE_THERMAL_ALERT=true
 THERMAL_ALERT_TEMP_C=75
 RAM_ALERT_PERCENT=90
+GEMINI_API_KEY=              # Dapatkan di https://aistudio.google.com/app/apikey (Bisa banyak key dipisah koma untuk failover: key1,key2)
 ```
 
 ---
@@ -200,4 +242,8 @@ RAM_ALERT_PERCENT=90
    * Seluruh handler bot menggunakan mode `HTML` (`parse_mode: 'HTML'`) dan fungsi `escapeHtml()` agar karakter `_` pada username (cth: `@ivy_your_assistant_bot`) tidak merusak entitas Markdown. Dilengkapi fallback pengiriman plain text.
 6. **Versi `better-sqlite3` & Testing:**
    * Di Windows / Node 22-24, gunakan versi `^11.8.1` yang memiliki prebuilt binary stabil.
-   * `npm test` menjalankan 24 unit test terintegrasi (database, regex, limit, health, orphan cleaner).
+   * `npm test` menjalankan unit test terintegrasi (database, regex, limit, health, orphan cleaner).
+   * `npm run test:expense` menguji seluruh alur pencatatan pengeluaran, agregasi, update kategori, dan catatan personal.
+7. **Ketahanan Google Gemini API, Failover Multi-Key & Error 503:**
+   * **Multi-Key Failover:** Anda dapat memasukkan lebih dari satu API Key di `GEMINI_API_KEY=key1,key2` (dipisah koma). Jika key pertama habis kuota gratis harian (`429`), bot otomatis beralih menggunakan key cadangan berikutnya tanpa error.
+   * **Lonjakan Beban Server (503):** Sistem secara otomatis menangani lonjakan beban trafik (503 High Demand) dengan jeda 1,5 detik dan retry otomatis tanpa membuat antarmuka bot crash.

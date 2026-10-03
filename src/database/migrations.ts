@@ -69,6 +69,33 @@ export function runMigrations(): void {
     );
   `);
 
+  // 5. Tabel expenses (Pencatatan Keuangan & Pengeluaran)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      telegram_id INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      category TEXT NOT NULL,
+      merchant TEXT,
+      items_detail TEXT,
+      notes TEXT,
+      raw_input TEXT,
+      source_type TEXT NOT NULL DEFAULT 'text',
+      created_at TEXT NOT NULL DEFAULT (DATETIME('now', 'localtime')),
+      FOREIGN KEY (telegram_id) REFERENCES users(telegram_id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_expenses_tg_id ON expenses(telegram_id);
+    CREATE INDEX IF NOT EXISTS idx_expenses_created_at ON expenses(created_at);
+    CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
+  `);
+
+  // Pastikan kolom notes ada pada database yang sudah berjalan sebelumnya
+  try {
+    db.exec(`ALTER TABLE expenses ADD COLUMN notes TEXT;`);
+  } catch {
+    // Abaikan jika kolom sudah ada
+  }
+
   // Inisialisasi default settings jika belum ada
   const insertSetting = db.prepare(`
     INSERT OR IGNORE INTO system_settings (key, value) VALUES (?, ?)

@@ -11,6 +11,7 @@ import { gameComposer } from './handlers/game.js';
 import { downloadComposer } from './handlers/download.js';
 import { topupComposer } from './handlers/topup.js';
 import { ticTacToeComposer } from './handlers/tictactoe.js';
+import { expenseComposer } from './handlers/expense.js';
 
 export function createBot(): Bot<MyContext> {
   if (!config.botToken) {
@@ -31,6 +32,7 @@ export function createBot(): Bot<MyContext> {
 
   // Pasang Handlers / Composers
   bot.use(startComposer);
+  bot.use(expenseComposer);
   bot.use(topupComposer);
   bot.use(vipComposer);
   bot.use(adminComposer);

@@ -43,11 +43,15 @@ startComposer.command('start', async ctx => {
 
   const welcomeText = 
     `👋 <b>Halo, ${escapeHtml(from.first_name)}!</b>\n\n` +
-    `Selamat datang di <b>Multi-Platform Downloader & STB Bot</b>.\n` +
+    `Selamat datang di <b>Multi-Platform Downloader & STB Utility Bot</b>.\n` +
     `Kirimkan link video, audio, foto, atau album untuk langsung diunduh secara instan!\n\n` +
     `📊 <b>Status Akun:</b> ${roleBadge}\n` +
     `💰 <b>Saldo Koin:</b> <b>${user.coins} Koin</b> (Level ${level} - ${user.exp} EXP)\n` +
     `⚡ <b>Biaya Unduhan:</b> ${user.role === 'vip' || user.role === 'admin' ? 'Gratis (VIP/Admin)' : `${config.coinCostDownload} Koin per unduhan`}\n\n` +
+    `💰 <b>Catat Keuangan Cerdas (AI):</b>\n` +
+    `• <code>/catat &lt;cerita belanja&gt;</code> - Catat belanja dengan kalimat santai\n` +
+    `• <code>/struk</code> - Kirim foto struk belanja untuk deteksi otomatis via AI\n` +
+    `• <code>/keuangan</code> - Lihat ringkasan dompet hari ini & bulan ini\n\n` +
     `🎮 <b>Cara Mendapatkan Koin:</b>\n` +
     `• Mainkan mini-games seru di /games (Family 100, Tebak Gambar, Dadu, Slot, Kuis)\n` +
     `• Klaim bonus koin harian di /claim (+50 Koin gratis setiap hari)\n` +
@@ -83,7 +87,11 @@ startComposer.command('help', async ctx => {
     `   • /koin - Cek saldo koin dan level EXP.\n` +
     `   • /tukar - Tukar koin game jadi Status VIP 30 Hari!\n` +
     `   • /leaderboard - Papan peringkat Top Koin & Top EXP.\n\n` +
-    `4. <b>Status VIP:</b>\n` +
+    `4. <b>💰 Catat Keuangan & Pengeluaran (AI):</b>\n` +
+    `   • /catat &lt;cerita&gt; - Catat belanja dengan kalimat santai (contoh: <code>/catat beli kopi 25rb</code>).\n` +
+    `   • /struk - Kirim foto struk belanja untuk dideteksi otomatis via AI.\n` +
+    `   • /keuangan atau /laporan - Rekap pengeluaran hari ini, bulan ini, & rincian kategori.\n\n` +
+    `5. <b>Status VIP:</b>\n` +
     `   Ingin download tanpa potong koin selamanya? Beli paket VIP di /topup atau tukarkan 1.500 koin game Anda di /tukar!`;
 
   await ctx.reply(helpText, { parse_mode: 'HTML' });
