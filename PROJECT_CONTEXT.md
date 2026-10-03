@@ -58,8 +58,8 @@ src/
 │       ├── expense.ts           # /catat <cerita>, /struk (foto struk OCR), /keuangan, /laporan, inline edit category/notes/delete
 │       ├── game.ts              # /games, /family100, /tebakgambar, /dice, /slot, /tebak, /claim, /koin, /tukar, /leaderboard
 │       ├── download.ts          # Tangkap link, status progress dinamis, inline button format, upload & unlink
-│       ├── topup.ts             # QRIS Otomatis Duitku
-│       ├── vip.ts               # Forward foto bukti transfer ke Admin + callback konfirmasi/tolak
+│       ├── topup.ts             # QRIS Dinamis & Katalog Paket Koin
+│       ├── vip.ts               # Verifikasi manual bukti pembayaran QRIS/VIP ke Admin
 │       └── admin.ts             # /health, /stats, /backup, /reboot, /cleancache, /speedtest, /updatedlp, /broadcast
 └── index.ts                     # Bootstrap migrasi, verifikasi binary yt-dlp, startup cleaner, graceful shutdown
 ```
@@ -178,7 +178,7 @@ src/
 | `/keuangan` / `/laporan` | Semua | Dashboard ringkasan dompet hari ini, bulan ini & rincian kategori |
 | `/profile` | Semua | Cek status role, saldo koin, level EXP, statistik akun |
 | `/ref` | Semua | Tautan referral (+500 koin per teman baru) |
-| `/topup` / `/belikoin` | Semua | Beli koin instan via QRIS Otomatis (Duitku) |
+| `/dukung` / `/topup` | Semua | Dukung pengembangan tools dengan beli paket berbayar via QRIS Dinamis |
 | `/games` | Semua | Dashboard arena mini-games & katalog game |
 | `/family100` / `/f100` | Semua | Game kuis survei Family 100 (60s, +2 koin/+1 exp, -10 koin jika 0) |
 | `/nyerah_f100` | Semua | Menyerah dari ronde Family 100 yang sedang aktif |

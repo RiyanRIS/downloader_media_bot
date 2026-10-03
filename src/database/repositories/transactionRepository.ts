@@ -8,9 +8,14 @@ export interface Transaction {
   package_id: string;
   amount: number;
   coins: number;
-  status: 'PENDING' | 'SUCCESS' | 'EXPIRED' | 'FAILED';
+  status: 'PENDING' | 'SUCCESS' | 'EXPIRED' | 'REJECTED' | 'FAILED';
   created_at: string;
   paid_at: string | null;
+}
+
+export function parseDbDate(rawDate: string): Date {
+  if (!rawDate) return new Date();
+  return new Date(rawDate.includes('T') ? rawDate : rawDate.replace(' ', 'T') + 'Z');
 }
 
 export const transactionRepository = {
@@ -42,7 +47,40 @@ export const transactionRepository = {
     return (row as Transaction) || null;
   },
 
-  updateStatus(merchantOrderId: string, status: 'SUCCESS' | 'EXPIRED' | 'FAILED', reference?: string): boolean {
+  getLatestPendingTransaction(telegramId: number): Transaction | null {
+    const row = db.prepare(`
+      SELECT * FROM transactions_log 
+      WHERE telegram_id = ? AND status = 'PENDING'
+      ORDER BY id DESC 
+      LIMIT 1
+    `).get(telegramId) as Transaction | undefined;
+
+    if (!row) return null;
+
+    // Batas waktu pesanan adalah 30 menit
+    const createdAt = parseDbDate(row.created_at);
+    const diffMinutes = (Date.now() - createdAt.getTime()) / (1000 * 60);
+
+    if (diffMinutes > 30) {
+      this.updateStatus(row.merchant_order_id, 'EXPIRED');
+      return null;
+    }
+
+    return row;
+  },
+
+  getLatestUserTransaction(telegramId: number): Transaction | null {
+    const row = db.prepare(`
+      SELECT * FROM transactions_log 
+      WHERE telegram_id = ? 
+      ORDER BY id DESC 
+      LIMIT 1
+    `).get(telegramId) as Transaction | undefined;
+
+    return row || null;
+  },
+
+  updateStatus(merchantOrderId: string, status: 'SUCCESS' | 'EXPIRED' | 'REJECTED' | 'FAILED', reference?: string): boolean {
     const paidAt = status === 'SUCCESS' ? new Date().toISOString() : null;
     const info = db.prepare(`
       UPDATE transactions_log 

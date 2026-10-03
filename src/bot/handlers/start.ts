@@ -65,7 +65,7 @@ startComposer.command('start', async ctx => {
     `• Mainkan mini-games seru di /games (Family 100, Tebak Gambar, Dadu, Slot, Kuis)\n` +
     `• Klaim bonus koin harian di /claim (+50 Koin gratis setiap hari)\n` +
     `• Ajak teman bergabung via /ref (+${config.coinReferralBonus} Koin per teman)\n` +
-    `• Beli koin instan via QRIS Otomatis di /topup\n\n` +
+    `• Dukung pengembangan tools ini dengan beli paket berbayar di /dukung (/topup)\n\n` +
     `🌐 <b>Platform yang Didukung:</b>\n` +
     `YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, Bilibili.`;
 
@@ -73,7 +73,7 @@ startComposer.command('start', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil & Statistik', 'start:profile')
@@ -89,7 +89,7 @@ startComposer.command('menu', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil Saya', 'start:profile')
@@ -112,7 +112,7 @@ startComposer.command('help', async ctx => {
     `   • /start - Pesan pembuka dan status saldo koin.\n` +
     `   • /profile - Detail profil, saldo koin, level EXP, dan statistik.\n` +
     `   • /ref - Link referral untuk mendapatkan +${config.coinReferralBonus} koin per teman.\n` +
-    `   • /topup - Beli koin instan menggunakan QRIS Otomatis (Duitku).\n` +
+    `   • /dukung atau /topup - Dukung pengembangan tools ini dengan beli paket berbayar (Koin & VIP).\n` +
     `   • /help - Panduan lengkap bot.\n\n` +
     `3. <b>🎮 Mini-Games & Hiburan:</b>\n` +
     `   • /games - Katalog arena mini-games.\n` +
@@ -132,7 +132,7 @@ startComposer.command('help', async ctx => {
     `   • 📊 Lihat ringkasan &amp; laporan pengeluaran harian/bulanan\n` +
     `   • 🌟 VIP &amp; Admin gratis biaya AI.\n\n` +
     `5. <b>Status VIP:</b>\n` +
-    `   Ingin download tanpa potong koin selamanya? Beli paket VIP di /topup atau tukarkan 1.500 koin game Anda di /tukar!`;
+    `   Ingin download tanpa potong koin selamanya? Dukung kami dengan paket VIP di /dukung (/topup) atau tukarkan 1.500 koin game Anda di /tukar!`;
 
   await ctx.reply(helpText, { parse_mode: 'HTML' });
 });
@@ -235,7 +235,7 @@ startComposer.callbackQuery('start:mainmenu', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil Saya', 'start:profile')

@@ -88,7 +88,7 @@ gameComposer.command(['games', 'game'], async ctx => {
     `• 🧩 <b>Kuis Tebak-Tebakan</b> (/tebak) - Asah otak (+2 koin &amp; +5 EXP)!\n` +
     `• 🎁 <b>Klaim Harian</b> (/claim) - Bonus +50 koin gratis setiap hari!\n` +
     `• 🔄 <b>Tukar Koin</b> (/tukar) - Tukar koin game jadi Status VIP 30 Hari!\n` +
-    `• 💳 <b>Beli Koin</b> (/topup) - Beli koin instan via QRIS Otomatis!`;
+    `• 💖 <b>Dukung Bot</b> (/dukung atau /topup) - Dukung tools ini dengan paket berbayar QRIS!`;
 
   const keyboard = new InlineKeyboard()
     .text('❌⭕ Tic Tac Toe', 'game:nav:ttt')
@@ -104,7 +104,7 @@ gameComposer.command(['games', 'game'], async ctx => {
     .text('👑 Tukar VIP', 'game:action:exchange')
     .row()
     .text('🏆 Papan Peringkat', 'game:action:leaderboard')
-    .text('💳 Beli Koin (QRIS)', 'topup:menu')
+    .text('💖 Beli Paket Dukungan', 'topup:menu')
     .row()
     .text('📋 Menu Utama', 'start:mainmenu');
 
@@ -135,7 +135,7 @@ gameComposer.command(['koin', 'saldo', 'dompet'], async ctx => {
 
   const keyboard = new InlineKeyboard()
     .text('🎁 Klaim Koin Gratis', 'game:action:claim')
-    .text('💳 Beli Koin (QRIS)', 'topup:menu')
+    .text('💖 Beli Paket Dukungan', 'topup:menu')
     .row()
     .text('👑 Tukar VIP', 'game:action:exchange')
     .text('🏆 Papan Peringkat', 'game:action:leaderboard')
@@ -760,13 +760,13 @@ export function renderCoinsLeaderboard(): { text: string; keyboard: InlineKeyboa
     });
   }
 
-  text += `\n💡 <i>Kumpulkan koin dari mini-games, klaim harian, atau beli via QRIS di /topup!</i>`;
+  text += `\n💡 <i>Kumpulkan koin dari mini-games, klaim harian, atau dukung kami via /dukung (/topup)!</i>`;
 
   const keyboard = new InlineKeyboard()
     .text('⭐ Lihat Top EXP / Level', 'game:leaderboard:exp')
     .row()
     .text('🎮 Main Game', 'game:nav:menu')
-    .text('💳 Beli Koin', 'topup:menu');
+    .text('💖 Beli Paket Dukungan', 'topup:menu');
 
   return { text, keyboard };
 }
@@ -792,7 +792,7 @@ export function renderExpLeaderboard(): { text: string; keyboard: InlineKeyboard
     .text('🪙 Lihat Top Koin (Terkaya)', 'game:leaderboard:coins')
     .row()
     .text('🎮 Main Game', 'game:nav:menu')
-    .text('💳 Beli Koin', 'topup:menu');
+    .text('💖 Beli Paket Dukungan', 'topup:menu');
 
   return { text, keyboard };
 }
@@ -835,7 +835,7 @@ gameComposer.command(['tukar', 'exchange'], async ctx => {
     .row()
     .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
     .row()
-    .text('💳 Beli Koin Instan (QRIS)', 'topup:menu')
+    .text('💖 Beli Paket Dukungan', 'topup:menu')
     .text('🎮 Arena Games', 'game:nav:menu');
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -1038,7 +1038,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .text('🔄 Tukar Koin', 'game:action:exchange')
       .row()
       .text('🏆 Peringkat', 'game:action:leaderboard')
-      .text('💳 Beli Koin (QRIS)', 'topup:menu')
+      .text('💖 Beli Paket Dukungan', 'topup:menu')
       .row()
       .text('📋 Menu Utama', 'start:mainmenu');
 
@@ -1257,7 +1257,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .row()
       .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
       .row()
-      .text('💳 Beli Koin (QRIS)', 'topup:menu')
+      .text('💖 Beli Paket Dukungan', 'topup:menu')
       .text('🎮 Menu Games', 'game:nav:menu');
 
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });

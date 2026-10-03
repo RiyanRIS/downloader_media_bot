@@ -11,10 +11,11 @@
 4. [Kas Grup & Keuangan Keluarga](#4-kas-grup--keuangan-keluarga)
 5. [Arena Permainan (Mini-Games)](#5-arena-permainan-mini-games)
 6. [Sistem Koin & Level EXP](#6-sistem-koin--level-exp)
-7. [Status Keanggotaan: Free vs VIP](#7-status-keanggotaan-free-vs-vip)
-8. [Panduan Khusus Menggunakan Bot di Grup Telegram](#8-panduan-khusus-menggunakan-bot-di-grup-telegram)
-9. [Daftar Perintah Lengkap (Cheatsheet)](#9-daftar-perintah-lengkap-cheatsheet)
-10. [Pertanyaan yang Sering Diajukan (FAQ)](#10-pertanyaan-yang-sering-diajukan-faq)
+7. [Panduan Top-Up Koin & Alur Pembayaran QRIS](#7-panduan-top-up-koin--alur-pembayaran-qris)
+8. [Status Keanggotaan: Free vs VIP](#8-status-keanggotaan-free-vs-vip)
+9. [Panduan Khusus Menggunakan Bot di Grup Telegram](#9-panduan-khusus-menggunakan-bot-di-grup-telegram)
+10. [Daftar Perintah Lengkap (Cheatsheet)](#10-daftar-perintah-lengkap-cheatsheet)
+11. [Pertanyaan yang Sering Diajukan (FAQ)](#11-pertanyaan-yang-sering-diajukan-faq)
 
 ---
 
@@ -25,7 +26,7 @@ Bot ini mengusung konsep **Button-First UX** — Anda tidak perlu repot mengetik
 * Ketik **/start** atau **/menu** untuk membuka dashboard utama bot:
   * 🎮 **Arena Games:** Buka katalog aneka game seru.
   * 💰 **Keuangan & Dompet:** Catat pengeluaran dan lihat rekap keuangan Anda.
-  * 💳 **Top Up Koin (QRIS):** Pembelian koin instan otomatis.
+  * 💳 **Dukungan & Paket Berbayar (QRIS):** Pembelian paket koin & VIP resmi via QRIS.
   * 🎁 **Klaim Harian:** Ambil koin dan EXP gratis setiap 24 jam.
   * 📊 **Profil & Statistik:** Cek level, sisa kuota, dan winrate game.
   * 🔗 **Referral:** Bagikan link undangan untuk mendapatkan bonus koin.
@@ -188,7 +189,7 @@ Koin dan EXP adalah mata uang virtual di dalam bot yang bisa Anda kumpulkan untu
 * 🎁 **Klaim Harian (`/claim`):** Dapatkan **+50 Koin & +10 EXP gratis** setiap 24 jam.
 * 🎮 **Menangkan Game:** Mainkan Family 100, Tebak Gambar, Dadu, Slot, dan Kuis.
 * 🔗 **Ajak Teman (`/ref`):** Dapatkan **+500 Koin & +10 EXP** untuk setiap teman yang bergabung lewat link referral Anda!
-* 💳 **Beli Koin Instan (`/topup`):** Beli koin via QRIS Otomatis (didukung BCA, Mandiri, BRI, BNI, Dana, OVO, Gopay, ShopeePay).
+* 💳 **Dukung Tools Ini (`/dukung` atau `/topup`):** Beli paket koin & VIP via QRIS Otomatis (didukung BCA, Mandiri, BRI, BNI, Dana, OVO, Gopay, ShopeePay).
 
 ### C. Perhitungan EXP sebagai Indikator Keaktifan Pengguna:
 EXP (**Experience Points**) adalah skor reputasi dan indikator keaktifan pengguna dalam menggunakan seluruh fitur bot:
@@ -205,7 +206,7 @@ EXP (**Experience Points**) adalah skor reputasi dan indikator keaktifan penggun
 | 🧩 **Kuis Tebak-Tebakan Benar** | **+1 EXP** | Diberikan jika memilih jawaban kuis dengan benar |
 | ❌⭕ **Menang Tic Tac Toe (PvP/AI)** | **+1 s/d +3 EXP** | Poin taktik saat memenangkan duel atau seri |
 | 🎲 **Menang Lempar Dadu (`/dice`)** | **+5 s/d +15 EXP** | Bonus keberuntungan saat mengalahkan dadu bot |
-| 💳 **Beli Paket Koin QRIS** | **+10 s/d +250 EXP** | Bonus loyalitas saat isi ulang koin resmi |
+| 💳 **Dukung Tools (Beli Paket QRIS)** | **+10 s/d +250 EXP** | Apresiasi loyalitas saat mendukung kelangsungan server |
 
 ### D. Sistem Peringkat & Level:
 Rumus kenaikan level: `Level = Math.floor(EXP / 100) + 1` *(Setiap 100 EXP otomatis naik 1 level)*:
@@ -219,7 +220,64 @@ Peringkat master EXP tertinggi di seluruh bot dapat dicek dengan mengetik **/lea
 
 ---
 
-## 7. Status Keanggotaan: Free vs VIP
+## 7. Dukung Pengembangan Tools Ini dengan Beli Paket Berbayar (QRIS)
+
+Bantu kami menjaga bot dan infrastruktur server tetap aktif, cepat, dan selalu diperbarui dengan membeli **Paket Berbayar Resmi**. Pembayaran didukung penuh via metode **QRIS** (BCA, Mandiri, BRI, BNI, Dana, GoPay, OVO, ShopeePay, LinkAja, dll). Setiap kontribusi Anda sangat berarti untuk biaya operasional server.
+
+### A. Pilihan Paket Dukungan Berbayar:
+
+| Paket | Benefit Koin | Benefit Spesial | Nominal Dukungan |
+|---|:---:|---|:---:|
+| 🥉 **Paket Starter** | **+200 Koin** | Akses puluhan unduhan media | **Rp 5.000** |
+| 🥈 **Paket Pro** ⭐ | **+500 Koin** | Pilihan terpopuler & hemat | **Rp 10.000** |
+| 🥇 **Paket Sultan** | **+1.200 Koin** | Bonus ekstra **+200 Koin** | **Rp 20.000** |
+| 👑 **Paket VIP Sultan** | **+2.000 Koin** | **VIP Member Aktif 30 Hari Bebas Unduh** | **Rp 35.000** |
+
+---
+
+### B. Alur Pembayaran Langkah demi Langkah:
+
+```mermaid
+graph TD
+    A["1. Ketik /dukung atau /topup"] --> B["2. Pilih Paket Dukungan"]
+    B --> C["3. Scan & Bayar QRIS"]
+    D["4. Kirim Foto Bukti Transfer"]
+    C --> D
+    D --> E{"5. Konfirmasi Kirim ke Admin"}
+    E -- "Ya, Kirim" --> F["6. Verifikasi Admin & Benefit Aktif"]
+    E -- "Batal" --> G["Dibatalkan"]
+```
+
+1. **Buka Menu Paket Dukungan:**
+   * Ketik perintah `/dukung` atau `/topup` di obrolan pribadi dengan bot, atau tekan tombol **`💖 Dukung Bot (Paket Berbayar)`** di menu utama `/start`.
+2. **Pilih Paket yang Diinginkan:**
+   * Tekan tombol paket pilihan Anda (contoh: `🥈 Paket Pro (500 Koin - Rp 10rb) ⭐`).
+   * Bot akan langsung menampilkan gambar kode **QRIS Dinamis** beserta rincian pesanan dan total pembayaran.
+3. **Pindai & Bayar:**
+   * Buka aplikasi mobile banking atau e-wallet pilihan Anda (BCA, Mandiri, GoPay, Dana, OVO, ShopeePay, dll).
+   * Pilih menu **Scan QR / QRIS** lalu arahkan kamera ke kode QRIS yang dikirimkan bot.
+   * Lakukan pembayaran sesuai dengan nominal tagihan yang tertera.
+4. **Kirim Foto Bukti Transfer:**
+   * Setelah pembayaran berhasil, simpan tangkapan layar (screenshot) bukti transfer Anda.
+   * Kirimkan foto bukti transfer tersebut langsung ke ruang obrolan bot.
+5. **Konfirmasi Pengiriman Bukti:**
+   * Bot akan menampilkan kartu konfirmasi dengan dua pilihan tombol:
+     * **`[ ✅ Ya, Kirim ke Admin ]`**: Tekan tombol ini untuk meneruskan bukti transfer Anda ke tim Administrator.
+     * **`[ ❌ Bukan / Batalkan ]`**: Tekan jika Anda tidak sengaja mengirim foto yang salah.
+6. **Verifikasi Admin & Benefit Otomatis Masuk:**
+   * Tim Admin akan memverifikasi mutasi transaksi Anda.
+   * Setelah diverifikasi, koin (dan status VIP jika memilih paket VIP) akan langsung aktif di akun Anda dan bot mengirimkan notifikasi apresiasi!
+
+---
+
+### C. Ketentuan & Informasi Penting:
+* ⏱️ **Batas Waktu Pembayaran:** Setiap pesanan berlaku selama **30 menit**.
+* ❌ **Batalkan Pesanan:** Jika Anda ingin mengganti paket sebelum membayar, cukup tekan tombol **`❌ Batalkan Pesanan`** pada pesan kode QRIS.
+* 🛡️ **Aman & Terpercaya:** Pembayaran diproses dengan standar QRIS Nasional Indonesia dan diverifikasi langsung oleh Administrator.
+
+---
+
+## 8. Status Keanggotaan: Free vs VIP
 
 | Manfaat & Fitur | 👤 Free User | 🌟 VIP Member |
 |---|---|---|
@@ -236,7 +294,7 @@ Peringkat master EXP tertinggi di seluruh bot dapat dicek dengan mengetik **/lea
 
 ---
 
-## 8. Panduan Khusus Menggunakan Bot di Grup Telegram
+## 9. Panduan Khusus Menggunakan Bot di Grup Telegram
 
 Agar bot dapat berjalan optimal saat dimasukkan ke dalam grup (terutama untuk game interaktif seperti Family 100 dan Tebak Gambar), pastikan konfigurasi berikut:
 
@@ -253,7 +311,7 @@ Agar bot dapat berjalan optimal saat dimasukkan ke dalam grup (terutama untuk ga
 
 ---
 
-## 9. Daftar Perintah Lengkap (Cheatsheet)
+## 10. Daftar Perintah Lengkap (Cheatsheet)
 
 ### 📌 Navigasi & Akun
 * `/start` — Memulai bot dan membuka menu navigasi utama.
@@ -280,15 +338,15 @@ Agar bot dapat berjalan optimal saat dimasukkan ke dalam grup (terutama untuk ga
 * `/claim` — Klaim bonus +50 koin dan +10 EXP harian gratis.
 * `/koin` — Cek saldo koin, level, dan ringkasan statistik menang.
 * `/tukar` — Tukar koin game menjadi status VIP 7 Hari / 30 Hari.
-* `/topup` — Beli koin game instan otomatis via QRIS.
+* `/topup` atau `/dukung` — Dukung pengembangan tools ini dengan beli paket berbayar via QRIS.
 * `/leaderboard` — Lihat 10 pemain terkaya dan level tertinggi.
 
 ---
 
-## 10. Pertanyaan yang Sering Diajukan (FAQ)
+## 11. Pertanyaan yang Sering Diajukan (FAQ)
 
 **Q: Mengapa bot tidak merespons tebakan kata di grup pada game Family 100?**  
-A: Pastikan *Privacy Mode* bot di `@BotFather` sudah di-set ke **Disable**, atau jadikan bot sebagai Admin grup (lihat [Bagian 8](#8-panduan-khusus-menggunakan-bot-di-grup-telegram)).
+A: Pastikan *Privacy Mode* bot di `@BotFather` sudah di-set ke **Disable**, atau jadikan bot sebagai Admin grup (lihat [Bagian 9](#9-panduan-khusus-menggunakan-bot-di-grup-telegram)).
 
 **Q: Jika saya mencatat pengeluaran di grup keluarga, apakah koin grup yang dipotong?**  
 A: Tidak. Koin yang terpotong adalah **koin pribadi akun Anda** yang mengirim pesan. Anggota keluarga lain tidak akan berkurang koinnya.

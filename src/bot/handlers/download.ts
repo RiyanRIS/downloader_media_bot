@@ -62,7 +62,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
       .text('🎮 Main Game Cari Koin', 'game:nav:menu')
       .text('🎁 Klaim Harian', 'game:action:claim')
       .row()
-      .text('💳 Beli Koin Instan (QRIS)', 'topup:menu')
+      .text('💖 Beli Paket Dukungan', 'topup:menu')
       .text(`🔗 Ajak Teman (+${config.coinReferralBonus} Koin)`, 'start:ref');
 
     await ctx.reply(
@@ -73,7 +73,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
       `• Mainkan mini-games seru di /games\n` +
       `• Klaim bonus koin harian di /claim\n` +
       `• Undang teman bergabung via /ref (+${config.coinReferralBonus} Koin)\n` +
-      `• Beli koin cepat via QRIS otomatis di /topup`,
+      `• Dukung tools ini & beli paket berbayar via QRIS di /dukung (/topup)`,
       { parse_mode: 'HTML', reply_markup: shortageKeyboard }
     );
     return;
@@ -201,7 +201,7 @@ downloadComposer.callbackQuery(/^dl:([^:]+):([a-z0-9_]+)$/, async ctx => {
 
   if (!isPrivileged && currentUser && currentUser.coins < downloadCost) {
     await ctx.answerCallbackQuery({
-      text: `⚠️ Koin tidak cukup! Butuh ${downloadCost} koin (Saldo Anda: ${currentUser.coins} koin). Ketik /topup untuk beli koin.`,
+      text: `⚠️ Koin tidak cukup! Butuh ${downloadCost} koin (Saldo Anda: ${currentUser.coins} koin). Ketik /dukung atau /topup untuk beli paket dukungan.`,
       show_alert: true
     });
     return;

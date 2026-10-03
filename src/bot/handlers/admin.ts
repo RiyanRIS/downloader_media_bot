@@ -86,7 +86,7 @@ adminComposer.command('stats', async ctx => {
     `• Pengguna VIP: ${userStats.vip}\n` +
     `• Pengguna Diblokir: ${userStats.banned}\n` +
     `• Total Admin: ${userStats.admins}\n\n` +
-    `💰 **Statistik Penjualan QRIS (Duitku):**\n` +
+    `💰 **Statistik Penjualan Top-Up QRIS:**\n` +
     `• Total Omset: Rp ${formattedRev}\n` +
     `• Top-Up Berhasil: ${txStats.totalSuccess} transaksi\n\n` +
     `📥 **Statistik Unduhan:**\n` +

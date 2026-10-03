@@ -7,9 +7,10 @@ import { detectPlatform, findBestDirectUrl } from '../src/services/downloaderSer
 import { photoService } from '../src/services/photoService.js';
 import { systemService } from '../src/services/systemService.js';
 import { transactionRepository } from '../src/database/repositories/transactionRepository.js';
-import { duitkuService } from '../src/services/duitkuService.js';
+import { qrisService, DEFAULT_STATIC_QRIS } from '../src/services/qrisService.js';
+import { calculateCRC16, convertQRIS, validateQRIS, parseQRIS } from '../src/services/qris/index.js';
 import { getLevelBadge } from '../src/bot/handlers/game.js';
-import { closeDatabase } from '../src/database/db.js';
+import { closeDatabase, db } from '../src/database/db.js';
 
 async function runTests() {
   console.log('🧪 Memulai Pengujian Unit & Logika Sistem...\n');
@@ -210,7 +211,7 @@ async function runTests() {
     const badgeSultan = getLevelBadge(3200);
     assert(badgeSultan.level === 33 && badgeSultan.title === 'Sultan', 'Level badge for 3200 exp is Sultan (Lv.33)');
 
-    // 10. Uji Repository Transaksi & Duitku Service
+    // 10. Uji Repository Transaksi & QRIS Dinamis Service
     const testOrderId = `TEST_ORDER_${Date.now()}`;
     const tx = transactionRepository.createTransaction({
       telegramId: testUserId,
@@ -222,23 +223,67 @@ async function runTests() {
     assert(tx.merchant_order_id === testOrderId, 'Transaction created with PENDING status');
     assert(tx.status === 'PENDING', 'Initial transaction status is PENDING');
 
-    const updateSuccess = transactionRepository.updateStatus(testOrderId, 'SUCCESS', 'REF123456');
-    assert(updateSuccess === true, 'Transaction status updated to SUCCESS');
-    const updatedTx = transactionRepository.getTransaction(testOrderId)!;
-    assert(updatedTx.status === 'SUCCESS' && updatedTx.paid_at !== null, 'Transaction reflects SUCCESS status with paid_at timestamp');
+    const pendingTx = transactionRepository.getLatestPendingTransaction(testUserId);
+    assert(pendingTx?.merchant_order_id === testOrderId, 'getLatestPendingTransaction retrieves latest pending order');
 
-    // Uji Duitku Signature MD5
-    const testSig = duitkuService.generateInquirySignature('MERCHANT01', 'ORDER01', 10000, 'KEY01');
-    assert(typeof testSig === 'string' && testSig.length === 32, 'Duitku MD5 inquiry signature is 32-char hex string');
+    // Uji QRIS CRC16 Checksum
+    const testCrc = calculateCRC16('00020101021126590014ID.LINKAJA.WWW011893600914383120301702150000000000000000303UMI51440014ID.LINKAJA.WWW02150000000000000000303UMI5204581253033605802ID5913MERCHANT TEST6007JAKARTA61051234062070703A016304');
+    assert(typeof testCrc === 'string' && testCrc.length === 4, 'CRC16 returns 4-char uppercase hex string');
 
-    // Uji Pembuatan QRIS (Mode Simulasi atau Gateway Duitku)
-    const qrisResult = await duitkuService.createQrisTransaction(testUserId, 'pro', 'test_user');
-    if (qrisResult.success) {
-      assert(Buffer.isBuffer(qrisResult.qrBuffer) && qrisResult.qrBuffer.length > 0, 'createQrisTransaction produces valid PNG QR buffer');
-    } else {
-      assert(typeof qrisResult.errorMessage === 'string' && qrisResult.errorMessage.length > 0, `createQrisTransaction handles API response gracefully (${qrisResult.errorMessage})`);
-    }
+    // Uji Validasi QRIS Statis
+    const validation = validateQRIS(DEFAULT_STATIC_QRIS);
+    assert(validation.valid === true, 'DEFAULT_STATIC_QRIS passes EMVCo structural and CRC validation');
+
+    // Uji Konversi QRIS Statis ke Dinamis (Injeksi Nominal Tag 54 dan Perubahan Method Tag 01 ke 12)
+    const dynamicQrisStr = convertQRIS(DEFAULT_STATIC_QRIS, { amount: 10000 });
+    const parsedDynamic = parseQRIS(dynamicQrisStr);
+    assert(parsedDynamic.method === 'dynamic', 'Converted QRIS has method=dynamic (Tag 01: 12)');
+    assert(parsedDynamic.amount === '10000', 'Converted QRIS has amount injected (Tag 54: 10000)');
+    const dynamicValidation = validateQRIS(dynamicQrisStr);
+    assert(dynamicValidation.valid === true, 'Converted Dynamic QRIS has valid recalculate CRC16');
+
+    // Uji Pembuatan QRIS Dinamis via qrisService
+    const qrisResult = await qrisService.createDynamicQrisTransaction(testUserId, 'pro', 'test_user');
+    assert(qrisResult.success === true, 'createDynamicQrisTransaction succeeds');
+    assert(Buffer.isBuffer(qrisResult.qrBuffer) && qrisResult.qrBuffer.length > 0, 'createDynamicQrisTransaction produces valid PNG QR buffer');
     assert(qrisResult.packageInfo?.coins === 500, 'Selected package gives 500 coins');
+
+    // Uji Verifikasi Manual oleh Admin (Konfirmasi & Penambahan Koin)
+    const coinsBeforeConfirm = userRepository.getUser(testUserId)!.coins;
+    const confirmRes = qrisService.confirmPayment(qrisResult.orderId, 123456);
+    assert(confirmRes.success === true, 'Admin confirmPayment approves transaction');
+    const coinsAfterConfirm = userRepository.getUser(testUserId)!.coins;
+    assert(coinsAfterConfirm === coinsBeforeConfirm + 500, 'User coins incremented by +500 after admin verification');
+
+    // Transaksi yang sudah SUCCESS tidak boleh dikonfirmasi ulang
+    const doubleConfirmRes = qrisService.confirmPayment(qrisResult.orderId, 123456);
+    assert(doubleConfirmRes.success === false, 'Cannot confirm already processed transaction');
+
+    // Uji Penolakan Transaksi oleh Admin
+    const rejectOrderId = `REJECT_ORDER_${Date.now()}`;
+    transactionRepository.createTransaction({
+      telegramId: testUserId,
+      merchantOrderId: rejectOrderId,
+      packageId: 'starter',
+      amount: 5000,
+      coins: 200
+    });
+    const rejectRes = qrisService.rejectPayment(rejectOrderId, 123456);
+    assert(rejectRes.success === true, 'Admin rejectPayment marks transaction as REJECTED');
+    const rejectedTx = transactionRepository.getTransaction(rejectOrderId)!;
+    assert(rejectedTx.status === 'REJECTED', 'Transaction status is REJECTED in database');
+
+    // Uji Batas Waktu 30 Menit Transaksi Pending (Auto-Expire)
+    const expiredOrderId = `EXP_ORDER_${Date.now()}`;
+    db.prepare(`
+      INSERT INTO transactions_log (telegram_id, merchant_order_id, reference, package_id, amount, coins, status, created_at)
+      VALUES (?, ?, NULL, 'starter', 5000, 200, 'PENDING', DATETIME('now', '-35 minutes'))
+    `).run(testUserId, expiredOrderId);
+
+    const expiredPendingCheck = transactionRepository.getLatestPendingTransaction(testUserId);
+    assert(expiredPendingCheck === null, 'getLatestPendingTransaction returns null for order older than 30 minutes');
+    const checkedExpTx = transactionRepository.getTransaction(expiredOrderId)!;
+    assert(checkedExpTx.status === 'EXPIRED', 'Order older than 30 minutes auto-updated to EXPIRED status');
 
     // Uji Kuis Dataset
     const sampleQuiz = (await import('../src/games/quizData.js')).getRandomQuiz();

@@ -61,12 +61,12 @@ function buildInsufficientCoinMsg(cost: number, currentCoins: number, featureNam
     `<b>Cara mendapatkan koin:</b>\n` +
     `• 🎁 Klaim bonus harian gratis\n` +
     `• 🎮 Mainkan mini-games di Arena Games\n` +
-    `• 💳 Beli koin via QRIS Otomatis`;
+    `• 💖 Dukung tools & beli paket berbayar di /dukung (/topup)`;
   const keyboard = new InlineKeyboard()
     .text('🎁 Klaim Harian', 'game:action:claim')
     .text('🎮 Main Game', 'game:nav:menu')
     .row()
-    .text('💳 Beli Koin (QRIS)', 'topup:menu')
+    .text('💖 Beli Paket Dukungan', 'topup:menu')
     .text('📊 Keuangan', 'keuangan:menu');
   return { text, keyboard };
 }

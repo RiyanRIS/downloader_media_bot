@@ -69,11 +69,7 @@ export const config = {
   coinInitialBonus: getEnvNumber('COIN_INITIAL_BONUS', 500),
   coinCostExpenseText: getEnvNumber('COIN_COST_EXPENSE_TEXT', 5),     // Biaya catat pengeluaran teks
   coinCostExpenseReceipt: getEnvNumber('COIN_COST_EXPENSE_RECEIPT', 10), // Biaya scan foto struk
-  duitkuMerchantCode: process.env.DUITKU_MERCHANT_CODE || '',
-  duitkuApiKey: process.env.DUITKU_API_KEY || '',
-  duitkuSandbox: getEnvBoolean('DUITKU_SANDBOX', true),
-  duitkuCallbackUrl: process.env.DUITKU_CALLBACK_URL || '',
-  duitkuPaymentMethod: process.env.DUITKU_PAYMENT_METHOD || 'NQ',
+  qrisStaticString: process.env.QRIS_STATIC_STRING || '',
   enableThermalAlert: getEnvBoolean('ENABLE_THERMAL_ALERT', true),
   thermalAlertTempC: getEnvNumber('THERMAL_ALERT_TEMP_C', 75),
   ramAlertPercent: getEnvNumber('RAM_ALERT_PERCENT', 90),

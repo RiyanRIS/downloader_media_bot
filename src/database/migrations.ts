@@ -41,7 +41,7 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_downloads_platform ON downloads_log(platform);
   `);
 
-  // 3. Tabel transactions_log (Top-Up QRIS Duitku)
+  // 3. Tabel transactions_log (Top-Up QRIS Dinamis & Manual)
   db.exec(`
     CREATE TABLE IF NOT EXISTS transactions_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

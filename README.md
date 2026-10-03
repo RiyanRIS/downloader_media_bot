@@ -116,7 +116,7 @@ Bot dirancang siap pakai (*group-ready*) untuk kebutuhan komunitas, keluarga, ma
 | Perintah | Hak Akses | Deskripsi |
 |---|---|---|
 | `/start` | Semua | Memulai bot, melihat informasi akun, dan menu navigasi utama |
-| `/menu` | Semua | Menampilkan keyboard navigasi cepat (Games, Keuangan, Top Up, Profil) |
+| `/menu` | Semua | Menampilkan keyboard navigasi cepat (Games, Keuangan, Dukung Bot, Profil) |
 | `/help` | Semua | Panduan format link media yang didukung dan aturan batas file |
 | `/profile` | Semua | Cek status keanggotaan (Free/VIP/Admin), sisa kuota hari ini, dan masa aktif |
 | `/ref` | Semua | Menampilkan tautan undangan referral dan total teman yang bergabung |
@@ -135,7 +135,7 @@ Bot dirancang siap pakai (*group-ready*) untuk kebutuhan komunitas, keluarga, ma
 | `/claim` | Semua | Mengklaim bonus +50 koin gratis setiap hari |
 | `/koin` | Semua | Memeriksa saldo dompet koin, EXP, level, dan statistik kemenangan |
 | `/tukar` | Semua | Menukarkan koin game menjadi status VIP 7 Hari / 30 Hari |
-| `/topup` | Semua | Beli koin game instan otomatis via QRIS Duitku |
+| `/dukung` / `/topup` | Semua | Dukung pengembangan tools ini dengan beli paket berbayar (QRIS Dinamis) |
 | `/leaderboard` | Semua | Menampilkan daftar 10 pemain game teratas (Koin & EXP) |
 | `/health` | Admin | Menampilkan suhu CPU, penggunaan RAM, ruang tmpfs, dan uptime perangkat |
 | `/stats` | Admin | Statistik agregasi total pengguna, VIP aktif, dan unduhan per platform |
