@@ -1,8 +1,10 @@
-import { Composer } from 'grammy';
+import { Composer, InlineKeyboard } from 'grammy';
 import { MyContext } from '../context.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { config } from '../../config/config.js';
 import { escapeHtml } from '../../utils/format.js';
+
+import { renderFinancialReport } from './expense.js';
 
 export const startComposer = new Composer<MyContext>();
 
@@ -11,6 +13,15 @@ startComposer.command('start', async ctx => {
   if (!from) return;
 
   const refPayload = ctx.match?.trim();
+
+  // Jika payload adalah 'keuangan', buka langsung dompet keuangan pribadi
+  if (refPayload === 'keuangan') {
+    userRepository.getOrCreateUser(from.id, from.username);
+    const { text, keyboard } = renderFinancialReport(from.id);
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    return;
+  }
+
   let referrerId: number | undefined;
 
   if (refPayload) {
@@ -49,18 +60,45 @@ startComposer.command('start', async ctx => {
     `💰 <b>Saldo Koin:</b> <b>${user.coins} Koin</b> (Level ${level} - ${user.exp} EXP)\n` +
     `⚡ <b>Biaya Unduhan:</b> ${user.role === 'vip' || user.role === 'admin' ? 'Gratis (VIP/Admin)' : `${config.coinCostDownload} Koin per unduhan`}\n\n` +
     `💰 <b>Catat Keuangan Cerdas (AI):</b>\n` +
-    `• <code>/catat &lt;cerita belanja&gt;</code> - Catat belanja dengan kalimat santai\n` +
-    `• <code>/struk</code> - Kirim foto struk belanja untuk deteksi otomatis via AI\n` +
-    `• <code>/keuangan</code> - Lihat ringkasan dompet hari ini & bulan ini\n\n` +
+    `Tekan tombol 💰 <b>Keuangan &amp; Dompet</b> di bawah untuk catat pengeluaran &amp; lihat ringkasan.\n\n` +
     `🎮 <b>Cara Mendapatkan Koin:</b>\n` +
     `• Mainkan mini-games seru di /games (Family 100, Tebak Gambar, Dadu, Slot, Kuis)\n` +
     `• Klaim bonus koin harian di /claim (+50 Koin gratis setiap hari)\n` +
-    `• Ajak teman bergabung via /ref (+50 Koin per teman)\n` +
+    `• Ajak teman bergabung via /ref (+${config.coinReferralBonus} Koin per teman)\n` +
     `• Beli koin instan via QRIS Otomatis di /topup\n\n` +
     `🌐 <b>Platform yang Didukung:</b>\n` +
     `YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, Bilibili.`;
 
-  await ctx.reply(welcomeText, { parse_mode: 'HTML' });
+  const mainKeyboard = new InlineKeyboard()
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💰 Keuangan & Dompet', 'keuangan:menu')
+    .row()
+    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('🎁 Klaim Harian', 'game:action:claim')
+    .row()
+    .text('📊 Profil & Statistik', 'start:profile')
+    .text(`🔗 Referral (+${config.coinReferralBonus} Koin)`, 'start:ref');
+
+  await ctx.reply(welcomeText, { parse_mode: 'HTML', reply_markup: mainKeyboard });
+});
+
+// Command /menu — shortcut ke menu navigasi utama
+startComposer.command('menu', async ctx => {
+  if (!ctx.from) return;
+  const keyboard = new InlineKeyboard()
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💰 Keuangan & Dompet', 'keuangan:menu')
+    .row()
+    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('🎁 Klaim Harian', 'game:action:claim')
+    .row()
+    .text('📊 Profil Saya', 'start:profile')
+    .text('🔗 Referral', 'start:ref');
+
+  await ctx.reply(
+    `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`,
+    { parse_mode: 'HTML', reply_markup: keyboard }
+  );
 });
 
 startComposer.command('help', async ctx => {
@@ -73,7 +111,7 @@ startComposer.command('help', async ctx => {
     `2. <b>Daftar Perintah Pengguna:</b>\n` +
     `   • /start - Pesan pembuka dan status saldo koin.\n` +
     `   • /profile - Detail profil, saldo koin, level EXP, dan statistik.\n` +
-    `   • /ref - Link referral untuk mendapatkan +50 koin per teman.\n` +
+    `   • /ref - Link referral untuk mendapatkan +${config.coinReferralBonus} koin per teman.\n` +
     `   • /topup - Beli koin instan menggunakan QRIS Otomatis (Duitku).\n` +
     `   • /help - Panduan lengkap bot.\n\n` +
     `3. <b>🎮 Mini-Games & Hiburan:</b>\n` +
@@ -87,10 +125,12 @@ startComposer.command('help', async ctx => {
     `   • /koin - Cek saldo koin dan level EXP.\n` +
     `   • /tukar - Tukar koin game jadi Status VIP 30 Hari!\n` +
     `   • /leaderboard - Papan peringkat Top Koin & Top EXP.\n\n` +
-    `4. <b>💰 Catat Keuangan & Pengeluaran (AI):</b>\n` +
-    `   • /catat &lt;cerita&gt; - Catat belanja dengan kalimat santai (contoh: <code>/catat beli kopi 25rb</code>).\n` +
-    `   • /struk - Kirim foto struk belanja untuk dideteksi otomatis via AI.\n` +
-    `   • /keuangan atau /laporan - Rekap pengeluaran hari ini, bulan ini, & rincian kategori.\n\n` +
+    `4. <b>💰 Catat Keuangan &amp; Pengeluaran (AI):</b>\n` +
+    `   Tekan tombol 💰 <b>Keuangan &amp; Dompet</b> di menu utama untuk:\n` +
+    `   • 📝 Catat pengeluaran dari cerita belanja teks (${config.coinCostExpenseText} Koin)\n` +
+    `   • 🧾 Scan foto struk belanja otomatis via AI (${config.coinCostExpenseReceipt} Koin)\n` +
+    `   • 📊 Lihat ringkasan &amp; laporan pengeluaran harian/bulanan\n` +
+    `   • 🌟 VIP &amp; Admin gratis biaya AI.\n\n` +
     `5. <b>Status VIP:</b>\n` +
     `   Ingin download tanpa potong koin selamanya? Beli paket VIP di /topup atau tukarkan 1.500 koin game Anda di /tukar!`;
 
@@ -123,7 +163,52 @@ startComposer.command('profile', async ctx => {
     `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
     `💡 <i>Kumpulkan koin dengan main game di /games atau isi ulang instan di /topup!</i>`;
 
-  await ctx.reply(profileText, { parse_mode: 'HTML' });
+  const keyboard = new InlineKeyboard()
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💰 Keuangan', 'keuangan:menu')
+    .row()
+    .text('📋 Menu Utama', 'start:mainmenu');
+
+  await ctx.reply(profileText, { parse_mode: 'HTML', reply_markup: keyboard });
+});
+
+// Callback: tampilkan profil via tombol
+startComposer.callbackQuery('start:profile', async ctx => {
+  await ctx.answerCallbackQuery();
+  if (!ctx.from) return;
+
+  const user = userRepository.getUser(ctx.from.id);
+  if (!user) return;
+
+  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '🌟 VIP Member' : '👤 Free User';
+  const totalRefs = userRepository.countReferrals(user.telegram_id);
+  const level = Math.floor(user.exp / 100) + 1;
+
+  let vipInfo = '';
+  if (user.role === 'vip' && user.vip_expires_at) {
+    const exp = new Date(user.vip_expires_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    vipInfo = `\n⏳ <b>Masa Aktif VIP Sampai:</b> ${exp}`;
+  }
+
+  const profileText =
+    `👤 <b>Profil Pengguna</b>\n\n` +
+    `• <b>ID Telegram:</b> <code>${user.telegram_id}</code>\n` +
+    `• <b>Username:</b> @${escapeHtml(user.username || '-')}\n` +
+    `• <b>Status Akun:</b> ${roleBadge}${vipInfo}\n` +
+    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b>\n` +
+    `• <b>Peringkat Level:</b> ⭐ Level ${level} (${user.exp} EXP)\n` +
+    `• <b>Total Permainan:</b> ${user.games_played} main (${user.games_won}x menang)\n` +
+    `• <b>Total Unduhan:</b> ${user.daily_usage} media\n` +
+    `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
+    `💡 <i>Kumpulkan koin dengan main game di /games atau isi ulang instan di /topup!</i>`;
+
+  const keyboard = new InlineKeyboard()
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💰 Keuangan', 'keuangan:menu')
+    .row()
+    .text('📋 Menu Utama', 'start:mainmenu');
+
+  await ctx.reply(profileText, { parse_mode: 'HTML', reply_markup: keyboard });
 });
 
 startComposer.command('ref', async ctx => {
@@ -141,6 +226,25 @@ startComposer.command('ref', async ctx => {
     `👥 <b>Total Teman Terundang:</b> ${totalRefs} pengguna`;
 
   await ctx.reply(refText, { parse_mode: 'HTML' });
+});
+
+// Callback: tombol menu utama
+startComposer.callbackQuery('start:mainmenu', async ctx => {
+  await ctx.answerCallbackQuery();
+  const keyboard = new InlineKeyboard()
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💰 Keuangan & Dompet', 'keuangan:menu')
+    .row()
+    .text('💳 Top Up Koin (QRIS)', 'topup:menu')
+    .text('🎁 Klaim Harian', 'game:action:claim')
+    .row()
+    .text('📊 Profil Saya', 'start:profile')
+    .text('🔗 Referral', 'start:ref');
+
+  await ctx.reply(
+    `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`,
+    { parse_mode: 'HTML', reply_markup: keyboard }
+  );
 });
 
 // Callback handler untuk tombol [🔗 Ajak Teman]

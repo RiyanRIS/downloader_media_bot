@@ -40,9 +40,9 @@ export const userRepository = {
     const validReferrer = referrerId && referrerId !== telegramId ? referrerId : null;
 
     db.prepare(`
-      INSERT INTO users (telegram_id, username, role, daily_usage, referrer_id)
-      VALUES (?, ?, ?, 0, ?)
-    `).run(telegramId, username || null, initialRole, validReferrer);
+      INSERT INTO users (telegram_id, username, role, daily_usage, referrer_id, coins)
+      VALUES (?, ?, ?, 0, ?, ?)
+    `).run(telegramId, username || null, initialRole, validReferrer, config.coinInitialBonus);
 
     user = this.getUser(telegramId)!;
     return { user, isNew: true };

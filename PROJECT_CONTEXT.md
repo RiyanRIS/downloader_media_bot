@@ -9,7 +9,7 @@
 * **Fungsi Utama:**
   1. Pengunduh media otomatis (YouTube, TikTok, Instagram, X/Twitter, Threads) dengan pre-check batas 50MB Telegram Bot API, pilihan resolusi/MP3, dan antrean `p-limit(2)`.
   2. Manajemen & monitoring server lokal / STB ARM64 (HG680-P / FJ) & Linux x64: `/health`, `/reboot`, `/cleancache`, `/speedtest`, `/updatedlp`.
-  3. Sistem tier pengguna: Free (5 limit/hari), VIP (50 limit/hari), Admin (unlimited), referral bonus (+5 limit), dan verifikasi transfer manual 1-klik.
+  3. Sistem tier pengguna: Free User (ekonomi koin, 5 koin/unduh, modal 500 koin), VIP (unduh & catat AI gratis tanpa koin sepuasnya), Admin (unlimited).
   4. Pencatatan Keuangan & Dompet Cerdas (AI Gemini): Ekstraksi bahasa santai/gaul (`/catat`), OCR foto struk belanja (`/struk`), rekapitulasi dompet harian & bulanan (`/keuangan`, `/laporan`), serta edit kategori & penambahan catatan interaktif.
 * **Tech Stack:**
   * Node.js (v22/v24 LTS, ESM `"type": "module"`)
@@ -77,7 +77,7 @@ src/
 * `vip_expires_at` (TEXT/ISO string, Nullable): Masa kedaluwarsa VIP (otomatis turun ke `'user'` jika lewat).
 * `referrer_id` (INTEGER, Nullable): Telegram ID yang mengajak.
 * `is_banned` (INTEGER): 0 (Aktif) atau 1 (Diblokir).
-* `coins` (INTEGER, Default 100): Saldo koin virtual pemain.
+* `coins` (INTEGER, Default 500): Saldo koin virtual pemain.
 * `exp` (INTEGER, Default 0): Poin pengalaman level game.
 * `games_played` (INTEGER, Default 0): Total permainan yang dimainkan.
 * `games_won` (INTEGER, Default 0): Total kemenangan permainan.
@@ -95,15 +95,18 @@ src/
 
 ### Tabel `expenses`
 * `id` (INTEGER PK AUTOINCREMENT)
-* `telegram_id` (INTEGER FK ke `users.telegram_id`)
-* `amount` (INTEGER): Nominal pengeluaran dalam Rupiah
-* `category` (TEXT): Kategori belanja (`Makanan & Minuman`, `Belanja Harian`, `Transportasi`, `Tagihan & Pulsa`, `Hiburan`, `Kesehatan`, `Lainnya`)
-* `merchant` (TEXT, Nullable): Nama toko / tempat belanja
-* `items_detail` (TEXT, Nullable): Ringkasan item belanja
-* `notes` (TEXT, Nullable): Catatan kustom pengguna (dibuat/diedit interaktif lewat tombol bot)
-* `raw_input` (TEXT, Nullable): Teks mentah masukan pengguna atau `[Foto Struk Belanja]`
-* `source_type` (TEXT): `'text'` atau `'receipt'`
-* `created_at` (TEXT): Timestamp pencatatan (lokal)
+* `telegram_id` (INTEGER FK ke `users.telegram_id`): ID user pencatat.
+* `chat_id` (INTEGER, Nullable): ID grup Telegram jika dicatat di grup (Kas Grup/Keluarga), atau NULL/ID user jika private.
+* `user_name` (TEXT, Nullable): Nama display pengguna pencatat transaksi.
+* `amount` (INTEGER): Nominal pengeluaran dalam Rupiah.
+* `category` (TEXT): Kategori belanja (`Makanan & Minuman`, `Belanja Harian`, `Transportasi`, `Tagihan & Pulsa`, `Hiburan`, `Kesehatan`, `Lainnya`).
+* `merchant` (TEXT, Nullable): Nama toko / tempat belanja.
+* `items_detail` (TEXT, Nullable): Ringkasan item belanja.
+* `notes` (TEXT, Nullable): Catatan kustom pengguna (dibuat/diedit interaktif lewat tombol bot).
+* `raw_input` (TEXT, Nullable): Teks mentah masukan pengguna atau `[Foto Struk Belanja]`.
+* `source_type` (TEXT): `'text'` atau `'receipt'`.
+* `is_personal` (INTEGER, Default 1): 1 jika dihitung di dompet pribadi, 0 jika hanya di kas grup (di-toggle via tombol `📌 Simpan juga di Pribadi`).
+* `created_at` (TEXT): Timestamp pencatatan (lokal).
 
 ### Tabel `system_settings`
 * `key` (TEXT PK), `value` (TEXT): Konfigurasi dinamis (`free_daily_limit`, `vip_daily_limit`, dll.).
@@ -138,9 +141,9 @@ src/
 * Referral via `/start?ref=<id>`: Memberikan bonus limit (+5 unduhan) ke pengajak.
 * Pembayaran: User mengirim foto bukti transfer $\to$ Bot meneruskan ke Admin dengan tombol `[✅ Konfirmasi VIP 30 Hari]` $\to$ 1-klik aktivasi instan tanpa manual query.
 
-### D. Alur Pencatatan Keuangan & Struk Belanja Cerdas (AI Gemini)
+### D. Alur Pencatatan Keuangan & Kas Grup Cerdas (AI Gemini)
 1. **Input Teks Cerita (`/catat <cerita belanja>`)**:
-   * Pengguna menceritakan pengeluaran dengan bahasa bebas / gaul (misal: *"beli soto 15k di pak bro"*, *"bensin 50rb"*, *"ceban"*).
+   * Pengguna menceritakan pengeluaran dengan bahasa bebas / gaul (misal: *"beli beras 5kg 75rb"*, *"bayar listrik 250k"*).
    * `aiExpenseService.parseExpenseFromText()` memanggil Gemini API dengan prompt terstruktur JSON untuk mengekstrak nominal, toko, item, dan kategori.
 2. **Input Foto Struk Belanja (`/struk` atau foto ber-caption `/struk` / `/catat`)**:
    * Foto struk diunduh langsung ke memory buffer (`Buffer`), **zero-persistence** tanpa membebani disk/eMMC server.
@@ -149,14 +152,18 @@ src/
    * **Multi-Key Failover Pool:** Mendukung lebih dari satu API key (cth: `GEMINI_API_KEY=key1,key2`). Jika Key #1 mencapai batas kuota gratis (`429 RESOURCE_EXHAUSTED`), sistem otomatis beralih (*failover*) ke Key cadangan (#2, #3, dst).
    * **Model Hierarchy:** Menggunakan alias resmi Google `gemini-flash-latest` (default) dengan fallback berurutan ke `gemini-flash-lite-latest`, `gemini-3.8-flash`, dan `gemini-3.5-flash`.
    * **Auto-retry 1.5 detik:** Jika Google mengembalikan error lonjakan antrean sesaat (`503 UNAVAILABLE / high demand`).
-4. **Interaktivitas Kartu Pengeluaran**:
-   * `[ 🏷️ Ganti Kategori ]`: Pilihan kategori cepat via inline keyboard.
-   * `[ 📝 Tambahkan Catatan ]` / `[ 📝 Edit Catatan ]`: Mengaktifkan state pending note untuk menambah catatan personal (cth: *"Reimburse kantor"*).
-   * `[ 🗑️ Hapus ]`: Menghapus catatan dari database SQLite.
-5. **Dashboard Dompet (`/keuangan` / `/laporan`)**:
-   * Rekapitulasi pengeluaran hari ini dan bulan ini.
-   * Breakdown per kategori dengan persentase dan ikon.
-   * Daftar 5 riwayat pengeluaran terakhir.
+4. **Mode Kas Grup / Keluarga & Tombol Sinkronisasi Pribadi**:
+   * Jika dicatat di dalam grup (chat type `group`/`supergroup`), otomatis disimpan ke Kas Grup (`chat_id = ctx.chat.id`, `is_personal = 0`).
+   * Tombol `[ 📌 Simpan juga di Pribadi ]` memungkinkan user pencatat menyinkronkan transaksi ke catatan dompet pribadinya (`is_personal = 1`).
+   * Biaya koin AI (teks = 5 koin, struk = 10 koin; gratis VIP/Admin) selalu dipotong dari saldo koin pribadi pencatat.
+5. **Dashboard Dompet & Kas Grup (`/keuangan` / `/laporan`)**:
+   * **Di Private Chat:** Menampilkan ringkasan pribadi (hari ini, bulan ini, rincian kategori, dan 5 transaksi terakhir).
+   * **Di Grup:** Menampilkan ringkasan Kas Grup / Keluarga dengan rincian **Kontribusi Anggota** (misal Ayah vs Ibu), total kas keluar, dan riwayat transaksi bersama.
+
+### E. Mode Games & Multiplayer di Grup Telegram
+* **Family 100 (`/family100`) & Tebak Gambar (`/tebakgambar`):** Sesi disimpan per `chatId`. Semua anggota grup bisa ikut mengetik jawaban; penebak benar langsung menerima reward koin & EXP.
+* **Tic Tac Toe PvP (`/ttt`):** Duel 1v1 antar anggota grup dengan taruhan koin atau santai. Pemain 2 menerima via tombol `[⚔️ Terima Tantangan!]`.
+* **Group Privacy Mode:** Di BotFather wajib `Disable` (`/setprivacy -> Disable`) atau jadikan bot Admin Grup agar bot dapat membaca tebakan teks kata biasa dari anggota grup.
 
 ---
 
@@ -170,7 +177,7 @@ src/
 | `/struk` | Semua | Masuk ke mode deteksi & membaca foto struk belanja otomatis (OCR AI) |
 | `/keuangan` / `/laporan` | Semua | Dashboard ringkasan dompet hari ini, bulan ini & rincian kategori |
 | `/profile` | Semua | Cek status role, saldo koin, level EXP, statistik akun |
-| `/ref` | Semua | Tautan referral (+50 koin per teman baru) |
+| `/ref` | Semua | Tautan referral (+500 koin per teman baru) |
 | `/topup` / `/belikoin` | Semua | Beli koin instan via QRIS Otomatis (Duitku) |
 | `/games` | Semua | Dashboard arena mini-games & katalog game |
 | `/family100` / `/f100` | Semua | Game kuis survei Family 100 (60s, +2 koin/+1 exp, -10 koin jika 0) |

@@ -12,7 +12,7 @@ export function runMigrations(): void {
       vip_expires_at TEXT,
       referrer_id INTEGER,
       is_banned INTEGER NOT NULL DEFAULT 0,
-      coins INTEGER NOT NULL DEFAULT 100,
+      coins INTEGER NOT NULL DEFAULT 500,
       exp INTEGER NOT NULL DEFAULT 0,
       games_played INTEGER NOT NULL DEFAULT 0,
       games_won INTEGER NOT NULL DEFAULT 0,
@@ -89,11 +89,31 @@ export function runMigrations(): void {
     CREATE INDEX IF NOT EXISTS idx_expenses_category ON expenses(category);
   `);
 
-  // Pastikan kolom notes ada pada database yang sudah berjalan sebelumnya
+  // Pastikan kolom notes dan kolom grup ada pada database yang sudah berjalan sebelumnya
   try {
     db.exec(`ALTER TABLE expenses ADD COLUMN notes TEXT;`);
   } catch {
     // Abaikan jika kolom sudah ada
+  }
+  try {
+    db.exec(`ALTER TABLE expenses ADD COLUMN chat_id INTEGER;`);
+  } catch {
+    // Abaikan jika kolom sudah ada
+  }
+  try {
+    db.exec(`ALTER TABLE expenses ADD COLUMN is_personal INTEGER NOT NULL DEFAULT 1;`);
+  } catch {
+    // Abaikan jika kolom sudah ada
+  }
+  try {
+    db.exec(`ALTER TABLE expenses ADD COLUMN user_name TEXT;`);
+  } catch {
+    // Abaikan jika kolom sudah ada
+  }
+  try {
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_expenses_chat_id ON expenses(chat_id);`);
+  } catch {
+    // Abaikan jika index sudah ada
   }
 
   // Inisialisasi default settings jika belum ada
@@ -104,8 +124,8 @@ export function runMigrations(): void {
   insertSetting.run('free_daily_limit', '5');
   insertSetting.run('vip_daily_limit', '50');
   insertSetting.run('referral_bonus_limit', '5');
-  insertSetting.run('coin_cost_download', '10');
-  insertSetting.run('referral_bonus_coins', '50');
+  insertSetting.run('coin_cost_download', '5');
+  insertSetting.run('referral_bonus_coins', '500');
   insertSetting.run('daily_claim_coins', '50');
   insertSetting.run('daily_claim_exp', '15');
   insertSetting.run('maintenance_mode', '0');

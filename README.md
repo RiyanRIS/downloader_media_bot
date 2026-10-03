@@ -9,6 +9,9 @@
 
 **STB Downloader Bot** adalah bot Telegram multi-platform downloader dan utilitas monitoring server yang dirancang khusus untuk berjalan secara stabil dan efisien pada perangkat berdaya rendah/hemat energi (seperti Android TV Box / STB ex-IndiHome **HG680-P**, **B860H** berbasis Linux Armbian/Debian ARM64) maupun server Linux x86_64 / VPS.
 
+> 📖 **Butuh panduan cara pakai bot untuk pengguna?**  
+> Silakan baca **[Panduan Pengguna Bot (User Guide)](USER_GUIDE.md)** yang berisi petunjuk lengkap cara download media, tips mencatat kas keluarga, aturan bermain game di grup, hingga tanya-jawab (FAQ).
+
 ---
 
 ## 🌟 Fitur Unggulan
@@ -30,12 +33,13 @@
 * **Orphan File Cleaner:** Cron otomatis setiap 30 menit membersihkan file unduhan kedaluwarsa ($> 15\text{ menit}$) jika terjadi crash tak terduga.
 * **Thermal & RAM Alert:** Peringatan otomatis ke Admin setiap 5 menit jika temperatur prosesor $> 75^\circ\text{C}$ atau penggunaan RAM $> 90\%$.
 
-### 👥 3. Manajemen Pengguna, Kuota & VIP
-* **Tier Pengguna Fleksibel:**
-  * **Free:** Kuota 5 unduhan per hari (reset otomatis setiap 00:00 WIB).
-  * **VIP:** Kuota 50 unduhan per hari dengan masa aktif bulanan (auto-demote saat kedaluwarsa).
-  * **Admin:** Akses kuota tanpa batas dan kendali penuh bot.
-* **Sistem Referral:** Pengguna mendapat tautan referral unik (`/ref`). Pengajak otomatis menerima bonus limit (+5 unduhan) untuk setiap pengguna baru yang bergabung.
+### 👥 3. Manajemen Pengguna, Ekonomi Koin & VIP
+* **Bebas Batas Harian (Coin-Based System):** Tidak ada limit kuota unduhan harian. Pengguna bebas mengunduh media sebanyak apa pun setiap hari selama memiliki saldo koin (5 koin per unduhan untuk Free User).
+* **Tier Keanggotaan:**
+  * **Free User:** Modal awal 500 koin, bebas unduh tanpa batas harian (5 koin/unduhan), bonus referral +500 koin, dan klaim harian +50 koin.
+  * **VIP Member:** Unduh media sepuasnya tanpa batas dan **GRATIS (0 Koin)**, serta bebas biaya fitur AI Keuangan (0 Koin).
+  * **Admin:** Akses penuh tanpa batas ke semua fitur sistem dan monitoring server.
+* **Sistem Referral:** Pengguna mendapat tautan referral unik (`/ref`). Pengajak otomatis menerima bonus **+500 Koin** (+10 EXP) untuk setiap pengguna baru yang bergabung.
 * **Verifikasi VIP 1-Klik:** Pengguna dapat mengirim foto bukti transfer bank/e-wallet; bot meneruskannya ke semua Admin lengkap dengan tombol inline `[✅ Konfirmasi VIP 30 Hari]`.
 
 ### 🛠️ 4. Utilitas & Monitoring Server Jarak Jauh (Admin)
@@ -49,15 +53,61 @@
 * `/broadcast`: Siaran pesan massal ke seluruh pengguna terdaftar dengan mekanisme anti-flood (maks 25 msg/detik).
 
 ### 🎮 5. Modul Mini-Games & Sistem Koin Virtual
-* **Sistem Koin Terpadu:** Setiap pengguna otomatis mendapatkan modal 100 koin, level, dan exp yang tercatat efisien di SQLite.
-* **Tukar Koin ke Kuota Unduhan (`/tukar`):** Kemenangan dari permainan dapat langsung ditukarkan menjadi batas kuota harian bot tambahan (100 koin = +5 kuota).
-* **Game Family 100 (`/family100` / `/f100`):** Kuis tebak jawaban survei populer (1700+ soal survei). Dapat dimainkan bersama di grup maupun chat pribadi. Tiap tebakan benar mendapat +2 koin & +1 EXP. Durasi 60 detik per ronde. Jika gagal tanpa menebak satu pun jawaban (0 jawaban), pembuat game dikenakan penalti -10 koin.
-* **Game Tebak Gambar (`/tebakgambar` / `/tg`):** Menampilkan gambar tebak-tebakan dari dataset BochilTeam lengkap dengan clue huruf tersamar, batas waktu 30 detik, tombol bantuan clue, dan tombol menyerah (`/nyerah`). Hadiah +4 koin & +2 EXP (atau +2 koin & +1 EXP jika butuh bantuan clue). Gagal atau menyerah dikenakan sanksi -5 koin.
+* **Sistem Koin Terpadu:** Setiap pengguna otomatis mendapatkan modal awal 500 koin, level, dan exp yang tercatat efisien di SQLite.
+* **Tukar Koin ke Kuota Unduhan (`/tukar`):** Kemenangan dari permainan dapat langsung ditukarkan menjadi batas kuota harian bot tambahan atau status VIP bulanan.
+* **Game Tic Tac Toe (`/ttt` atau `/tictactoe`):** Arena duel 3x3 klasik dengan 2 mode permainan:
+  * 🤖 **Lawan Bot (Solo):** Bertanding langkah demi langkah melawan Bot AI cerdas.
+  * ⚔️ **Lawan Teman (PvP di Grup):** Buka tantangan duel dengan pot taruhan koin atau santai. Anggota grup lain cukup klik tombol `[⚔️ Terima Tantangan!]` untuk bertanding live!
+* **Game Family 100 (`/family100` / `/f100`):** Kuis tebak jawaban survei populer (1700+ soal survei). Sangat seru dimainkan bersama di grup maupun chat pribadi. Tiap tebakan benar mendapat +2 koin & +1 EXP ke anggota yang menebak. Durasi 60 detik per ronde. Jika gagal tanpa menebak satu pun jawaban (0 jawaban), pembuat game dikenakan penalti -10 koin.
+* **Game Tebak Gambar (`/tebakgambar` / `/tg`):** Menampilkan gambar tebak-tebakan dari dataset BochilTeam lengkap dengan clue huruf tersamar, batas waktu 30 detik, tombol bantuan clue, dan tombol menyerah (`/nyerah`). Di grup, seluruh anggota bisa beradu cepat menebak. Hadiah +4 koin & +2 EXP (atau +2 koin & +1 EXP jika butuh clue) untuk penebak tercepat. Gagal atau menyerah dikenakan sanksi -5 koin.
 * **Game Dadu Keberuntungan (`/dice`):** Animasi dadu fisik Telegram (`🎲`) beradu angka melawan bot dengan pengganda hadiah 2x lipat.
 * **Mesin Slot Kasino Mini (`/slot`):** Animasi reel mesin slot Telegram (`🎰`) dengan Super Jackpot 777 (10x lipat hadiah), triple simbol kembar (4x–5x), dan double kembar (1.5x).
-* **Kuis Tebak-Tebakan Interaktif (`/tebak`):** Teka-teki kocak dan asah otak dengan 4 tombol pilihan ganda (A, B, C, D) interaktif langsung via Inline Keyboard (Hadiah: +2 koin & +1 EXP, salah atau menyerah soal lain: -5 koin).
+* **Kuis Tebak-Tebakan Interaktif (`/tebak`):** Teka-teki kocak dan asah otak dengan 4 tombol pilihan ganda (A, B, C, D) interaktif langsung via Inline Keyboard (Hadiah: +2 koin & +1 EXP, salah atau menyerah soal lain: -5 koin). Tombol diproteksi agar hanya inisiator kuis yang dapat memilih.
 * **Klaim Bonus Harian (`/claim`):** Bonus +50 koin dan +10 EXP gratis setiap 24 jam.
-* **Papan Peringkat Global (`/leaderboard`):** Menampilkan daftar 10 pemain terkaya dengan raihan level dan winrate tertinggi.
+* **Papan Peringkat Global (`/leaderboard`):** Menampilkan daftar 10 pemain terkaya (koin) dan daftar 10 master EXP level tertinggi.
+
+### 💰 6. Pencatatan Keuangan AI & Kas Grup / Keluarga
+* **Ekstraksi AI Bahasa Santai (Google Gemini):** Cukup ketik cerita belanja sehari-hari (contoh: <code>beli soto ayam 15k di warung pak kumis</code>), AI otomatis mendeteksi nominal, kategori belanja, toko/merchant, dan item pembelian.
+* **Scan Struk Belanja Otomatis (OCR Multi-Modal):** Pengguna dapat mengirimkan foto nota atau struk belanja; AI Gemini akan membaca total belanja, rincian barang, dan toko secara otomatis.
+* **Multi-Key Failover Rotation:** Mendukung daftar API Key Gemini cadangan (`GEMINI_API_KEYS=key1,key2,key3`) dengan rotasi otomatis jika terjadi limit kuota (HTTP 429) atau gangguan server Google.
+* **Mode Kas Grup / Keluarga:**
+  * Jika dicatat di dalam grup (misal: grup keluarga berisi Ayah, Ibu, dan Anak), transaksi otomatis dicatat sebagai **Kas Grup / Pengeluaran Bersama**.
+  * Transaksi otomatis menampilkan nama anggota yang mencatat (`👤 Dicatat oleh: Ayah`).
+  * **Biaya Koin Tetap Personal:** Koin yang digunakan untuk mencatat (5 koin teks, 10 koin struk; gratis VIP/Admin) selalu dipotong dari saldo pribadi user yang mengirim catatan, bukan koin grup.
+* **Tombol Sinkronisasi Pribadi (`📌 Simpan juga di Pribadi`):**
+  * Pada kartu konfirmasi di grup, anggota yang mencatat dapat menekan tombol `[📌 Simpan juga di Pribadi]`.
+  * Transaksi tersebut akan otomatis masuk juga ke buku kas/dompet pribadi milik anggota tersebut.
+  * Dilengkapi proteksi: hanya pencatat transaksi yang dapat menekan tombol sinkronisasi dompet pribadinya.
+* **Laporan Keuangan Cerdas (`/keuangan`):**
+  * **Di Chat Pribadi:** Menampilkan ringkasan dompet pribadi (hari ini, bulan ini, rincian kategori, dan 5 transaksi terakhir).
+  * **Di Grup:** Menampilkan ringkasan **Kas Grup / Keluarga** lengkap dengan **Kontribusi Anggota** (misal: Ayah Rp 1.500.000, Ibu Rp 1.200.000), total pengeluaran bersama, dan transaksi kas terakhir.
+* **Navigasi Button-First:** Pengguna dapat mengakses seluruh alur pencatatan dan pengelolaan melalui tombol inline interaktif tanpa perlu menghafal perintah teks.
+
+---
+
+### 👥 7. Panduan Penggunaan Bot di Grup Telegram
+
+Bot dirancang siap pakai (*group-ready*) untuk kebutuhan komunitas, keluarga, maupun tongkrongan:
+
+| Fitur di Grup | Cara Menggunakan di Grup | Perilaku & Sistem Hadiah |
+|---|---|---|
+| **Kas Keluarga** | Ketik `/catat <teks>`, kirim foto struk, atau klik tombol di `/keuangan` | Masuk ke buku kas grup. Koin dipotong dari user pencatat. Ada tombol `[📌 Simpan juga di Pribadi]`. |
+| **Family 100** | Ketik `/family100` atau `/f100` | Seluruh anggota grup berlomba menebak jawaban survei di chat. Jawaban benar langsung dapat +2 koin & +1 EXP. |
+| **Tebak Gambar** | Ketik `/tebakgambar` atau `/tg` | Gambar soal muncul di grup. Anggota tercepat yang menjawab benar mendapat +4 koin & +2 EXP. |
+| **Tic Tac Toe PvP** | Ketik `/ttt`, pilih *Lawan Teman (PvP)* & tentukan taruhan | Bot mengirim tantangan di grup. Anggota lain menekan `[⚔️ Terima Tantangan!]` untuk duel live 1v1. Pemenang mengambil pot koin! |
+| **Dadu & Slot** | Ketik `/dice <koin>` atau `/slot <koin>` | Animasi dadu/slot Telegram berputar langsung di grup dan dapat ditonton bersama. |
+| **Laporan Kas** | Ketik `/keuangan` atau `/laporan` di grup | Menampilkan rekap total kas keluar bersama dan rincian kontribusi per anggota keluarga. |
+
+> [!IMPORTANT]
+> **Konfigurasi Wajib Telegram BotFather (Agar Bot Bisa Membaca Tebakan di Grup):**
+> Telegram secara bawaan menyalakan *Group Privacy Mode*, sehingga bot tidak dapat membaca pesan teks biasa (seperti tebakan kata pada Family 100 dan Tebak Gambar) kecuali pesan diawali garis miring `/`.
+> 
+> Agar permainan tebak kata di grup berjalan mulus:
+> 1. Buka bot **[@BotFather](https://t.me/BotFather)** di Telegram.
+> 2. Ketik `/setprivacy`.
+> 3. Pilih bot Anda (`@ivy_your_assistant_bot`).
+> 4. Pilih opsi **Disable** (Matikan Privacy Mode).
+> *(Atau cukup angkat bot sebagai **Admin Grup** dengan hak akses membaca pesan).*
 
 ---
 
@@ -65,22 +115,28 @@
 
 | Perintah | Hak Akses | Deskripsi |
 |---|---|---|
-| `/start` | Semua | Memulai bot, melihat informasi akun, dan aktivasi kode referral |
+| `/start` | Semua | Memulai bot, melihat informasi akun, dan menu navigasi utama |
+| `/menu` | Semua | Menampilkan keyboard navigasi cepat (Games, Keuangan, Top Up, Profil) |
 | `/help` | Semua | Panduan format link media yang didukung dan aturan batas file |
 | `/profile` | Semua | Cek status keanggotaan (Free/VIP/Admin), sisa kuota hari ini, dan masa aktif |
 | `/ref` | Semua | Menampilkan tautan undangan referral dan total teman yang bergabung |
+| `/keuangan` / `/laporan` | Semua | Membuka laporan keuangan pribadi (di chat bot) atau Kas Grup/Keluarga (di grup) |
+| `/catat <teks>` | Semua | Mencatat pengeluaran otomatis via AI Gemini (5 koin; gratis VIP/Admin) |
+| `/struk` | Semua | Memulai mode scan foto struk/nota belanja via AI Vision (10 koin; gratis VIP/Admin) |
 | `/games` | Semua | Membuka arena dashboard permainan & mini-games interaktif |
+| `/tictactoe` / `/ttt` | Semua | Game Tic Tac Toe (Solo lawan Bot AI atau PvP duel tantang teman di grup) |
 | `/family100` / `/f100` | Semua | Game kuis survei Family 100 (+2 koin/+1 EXP per jawaban benar, 60 detik) |
 | `/nyerah_f100` | Semua | Menyerah dalam ronde Family 100 dan melihat seluruh jawaban |
 | `/tebakgambar` / `/tg` | Semua | Tebak Gambar (+4 koin, +2 koin jika clue, 30s, gagal -5 koin) |
 | `/nyerah` | Semua | Menyerah dalam permainan Tebak Gambar (-5 koin) dan melihat jawaban |
 | `/dice <koin>` | Semua | Melempar dadu virtual Telegram berhadiah koin melawan bot |
-| `/slot <koin>` | Semua | Memutar mesin slot jackpot mini |
+| `/slot <koin>` | Semua | Memutar mesin slot jackpot mini Telegram |
 | `/tebak` | Semua | Kuis teka-teki logika & humor (+2 koin, salah/menyerah -5 koin) |
 | `/claim` | Semua | Mengklaim bonus +50 koin gratis setiap hari |
 | `/koin` | Semua | Memeriksa saldo dompet koin, EXP, level, dan statistik kemenangan |
-| `/tukar` | Semua | Menukarkan koin game menjadi batas kuota unduhan bot ekstra |
-| `/leaderboard` | Semua | Menampilkan daftar 10 pemain game teratas |
+| `/tukar` | Semua | Menukarkan koin game menjadi status VIP 7 Hari / 30 Hari |
+| `/topup` | Semua | Beli koin game instan otomatis via QRIS Duitku |
+| `/leaderboard` | Semua | Menampilkan daftar 10 pemain game teratas (Koin & EXP) |
 | `/health` | Admin | Menampilkan suhu CPU, penggunaan RAM, ruang tmpfs, dan uptime perangkat |
 | `/stats` | Admin | Statistik agregasi total pengguna, VIP aktif, dan unduhan per platform |
 | `/backup` | Admin | Mengunduh salinan berkas database `bot.db` ke Telegram |

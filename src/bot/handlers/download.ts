@@ -63,7 +63,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
       .text('🎁 Klaim Harian', 'game:action:claim')
       .row()
       .text('💳 Beli Koin Instan (QRIS)', 'topup:menu')
-      .text('🔗 Ajak Teman (+50 Koin)', 'start:ref');
+      .text(`🔗 Ajak Teman (+${config.coinReferralBonus} Koin)`, 'start:ref');
 
     await ctx.reply(
       `⚠️ <b>Koin Anda Tidak Cukup!</b>\n\n` +
@@ -72,7 +72,7 @@ downloadComposer.on('message:text', async (ctx, next) => {
       `<b>Cara mudah mendapatkan koin:</b>\n` +
       `• Mainkan mini-games seru di /games\n` +
       `• Klaim bonus koin harian di /claim\n` +
-      `• Undang teman bergabung via /ref (+50 Koin)\n` +
+      `• Undang teman bergabung via /ref (+${config.coinReferralBonus} Koin)\n` +
       `• Beli koin cepat via QRIS otomatis di /topup`,
       { parse_mode: 'HTML', reply_markup: shortageKeyboard }
     );

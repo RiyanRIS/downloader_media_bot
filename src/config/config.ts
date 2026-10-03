@@ -64,8 +64,11 @@ export const config = {
   freeDailyLimit: getEnvNumber('FREE_DAILY_LIMIT', 5),
   vipDailyLimit: getEnvNumber('VIP_DAILY_LIMIT', 50),
   referralBonusLimit: getEnvNumber('REFERRAL_BONUS_LIMIT', 5),
-  coinCostDownload: getEnvNumber('COIN_COST_DOWNLOAD', 10),
-  coinReferralBonus: getEnvNumber('COIN_REFERRAL_BONUS', 50),
+  coinCostDownload: getEnvNumber('COIN_COST_DOWNLOAD', 5),
+  coinReferralBonus: getEnvNumber('COIN_REFERRAL_BONUS', 500),
+  coinInitialBonus: getEnvNumber('COIN_INITIAL_BONUS', 500),
+  coinCostExpenseText: getEnvNumber('COIN_COST_EXPENSE_TEXT', 5),     // Biaya catat pengeluaran teks
+  coinCostExpenseReceipt: getEnvNumber('COIN_COST_EXPENSE_RECEIPT', 10), // Biaya scan foto struk
   duitkuMerchantCode: process.env.DUITKU_MERCHANT_CODE || '',
   duitkuApiKey: process.env.DUITKU_API_KEY || '',
   duitkuSandbox: getEnvBoolean('DUITKU_SANDBOX', true),

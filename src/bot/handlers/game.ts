@@ -104,7 +104,9 @@ gameComposer.command(['games', 'game'], async ctx => {
     .text('👑 Tukar VIP', 'game:action:exchange')
     .row()
     .text('🏆 Papan Peringkat', 'game:action:leaderboard')
-    .text('💳 Beli Koin (QRIS)', 'topup:menu');
+    .text('💳 Beli Koin (QRIS)', 'topup:menu')
+    .row()
+    .text('📋 Menu Utama', 'start:mainmenu');
 
   await ctx.reply(menuText, { parse_mode: 'HTML', reply_markup: keyboard });
 });
@@ -1036,7 +1038,9 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .text('🔄 Tukar Koin', 'game:action:exchange')
       .row()
       .text('🏆 Peringkat', 'game:action:leaderboard')
-      .text('💳 Beli Koin (QRIS)', 'topup:menu');
+      .text('💳 Beli Koin (QRIS)', 'topup:menu')
+      .row()
+      .text('📋 Menu Utama', 'start:mainmenu');
 
     try {
       await ctx.editMessageText(menuText, { parse_mode: 'HTML', reply_markup: keyboard });

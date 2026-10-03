@@ -89,7 +89,7 @@ vipComposer.callbackQuery(/^confirm_vip:(\d+):(\d+)$/, async ctx => {
       targetUserId,
       `🎉 <b>Selamat! Akun Anda Telah Aktif Sebagai VIP!</b>\n\n` +
       `Masa aktif VIP: <b>${days} Hari</b>\n` +
-      `Batas kuota harian: <b>${config.vipDailyLimit} unduhan/hari</b>.\n\n` +
+      `Nikmati unduhan media sepuasnya tanpa batas harian dan bebas potong koin (GRATIS 0 Koin)!\n\n` +
       `Terima kasih telah mendukung server kami!`,
       { parse_mode: 'HTML' }
     ).catch(() => {});
