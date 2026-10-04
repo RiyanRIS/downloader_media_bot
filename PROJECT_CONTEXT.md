@@ -64,6 +64,12 @@ src/
 ├── utils/
 │   ├── format.ts                # escapeHtml, formatRupiah
 │   └── contact.ts               # getAdminContactInfo (resolve .env username/custom URL & database fallback)
+├── website/                     # Website dokumentasi, SEO landing page & Terms of Service (CoderDocs style)
+│   ├── index.html               # Halaman panduan utama & cheatsheet
+│   ├── terms.html               # Ketentuan Layanan (ToS), DMCA & Disclaimer Hak Cipta
+│   ├── privacy.html             # Kebijakan Privasi & Zero-Persistence data
+│   ├── sitemap.xml & robots.txt # File optimasi SEO Google Search Console
+│   └── assets/                  # CSS CoderDocs modern & JavaScript interaktif
 └── index.ts                     # Bootstrap migrasi, verifikasi binary yt-dlp, startup cleaner, graceful shutdown
 ```
 
