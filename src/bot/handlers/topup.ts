@@ -4,6 +4,7 @@ import { userRepository } from '../../database/repositories/userRepository.js';
 import { transactionRepository } from '../../database/repositories/transactionRepository.js';
 import { qrisService, TOPUP_PACKAGES, TopupPackage } from '../../services/qrisService.js';
 import { escapeHtml } from '../../utils/format.js';
+import { getAdminContactInfo } from '../../utils/contact.js';
 
 export const topupComposer = new Composer<MyContext>();
 
@@ -24,6 +25,7 @@ async function sendTopupMenu(ctx: MyContext) {
 
   const user = userRepository.getUser(from.id);
   const currentCoins = user ? user.coins : 0;
+  const contact = getAdminContactInfo();
 
   const text =
     `💖 <b>DUKUNG PENGEMBANGAN TOOLS &amp; BOT</b>\n\n` +
@@ -36,7 +38,9 @@ async function sendTopupMenu(ctx: MyContext) {
     `• 🥇 <b>Paket Sultan:</b> +1.200 Koin — <b>Rp 20.000</b> <i>(Bonus ekstra +200 Koin)</i>\n` +
     `• 👑 <b>Paket VIP Sultan:</b> +2.000 Koin + VIP 30 Hari — <b>Rp 35.000</b>\n\n` +
     `💳 <b>Metode Pembayaran:</b> QRIS Dinamis Otomatis (BCA, BRI, Mandiri, BNI, GoPay, OVO, Dana, ShopeePay, dll).\n` +
-    `⏱️ <i>Batas waktu pembayaran adalah <b>30 menit</b> per pesanan. Setelah transfer, kirimkan foto bukti pembayaran ke bot ini untuk diverifikasi Admin.</i>`;
+    `⏱️ <i>Batas waktu pembayaran adalah <b>30 menit</b> per pesanan. Setelah transfer, kirimkan foto bukti pembayaran ke bot ini untuk diverifikasi Admin.</i>\n\n` +
+    `💬 <b>Butuh Bantuan Top-Up?</b>\n` +
+    `Jika transfer bermasalah, koin belum masuk, atau butuh metode pembayaran lain, hubungi Admin: <b>${escapeHtml(contact.display)}</b>.`;
 
   const keyboard = new InlineKeyboard()
     .text('🥉 Paket Starter (200 Koin - Rp 5rb)', 'topup:select:starter')
@@ -46,9 +50,17 @@ async function sendTopupMenu(ctx: MyContext) {
     .text('🥇 Paket Sultan (1.200 Koin - Rp 20rb)', 'topup:select:sultan')
     .row()
     .text('👑 Paket VIP + 2.000 Koin (Rp 35rb)', 'topup:select:vip')
-    .row()
+    .row();
+
+  if (contact.isAvailable) {
+    keyboard.url('💬 Tanya Admin / CS', contact.getContactUrl('Halo Admin, saya ingin bertanya tentang paket topup'));
+  }
+
+  keyboard
     .text('🎮 Arena Games', 'game:nav:menu')
-    .text('👛 Cek Saldo', 'game:action:koin');
+    .row()
+    .text('👛 Cek Saldo', 'game:action:koin')
+    .text('📋 Menu Utama', 'start:mainmenu');
 
   if (ctx.callbackQuery) {
     await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
@@ -112,8 +124,15 @@ topupComposer.callbackQuery(/^topup:select:([a-z0-9_]+)$/, async ctx => {
       `📸 <b>Setelah transfer, silakan kirim foto bukti pembayaran ke chat ini.</b>\n` +
       `<i>Admin akan segera memverifikasi dan benefit paket langsung aktif di akun Anda.</i>`;
 
+    const contact = getAdminContactInfo();
     const keyboard = new InlineKeyboard()
-      .text('💡 Panduan Kirim Bukti', 'topup:guide')
+      .text('💡 Panduan Kirim Bukti', 'topup:guide');
+
+    if (contact.isAvailable) {
+      keyboard.url('💬 Butuh Bantuan?', contact.getContactUrl(`Halo Admin, saya butuh bantuan terkait Order ID: ${result.orderId}`));
+    }
+
+    keyboard
       .row()
       .text('❌ Batalkan Pesanan', `topup:cancel:${result.orderId}`);
 

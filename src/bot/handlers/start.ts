@@ -3,6 +3,7 @@ import { MyContext } from '../context.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { config } from '../../config/config.js';
 import { escapeHtml } from '../../utils/format.js';
+import { getAdminContactInfo } from '../../utils/contact.js';
 
 import { renderFinancialReport } from './expense.js';
 
@@ -77,7 +78,9 @@ startComposer.command('start', async ctx => {
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil & Statistik', 'start:profile')
-    .text(`🔗 Referral (+${config.coinReferralBonus} Koin)`, 'start:ref');
+    .text(`🔗 Referral (+${config.coinReferralBonus} Koin)`, 'start:ref')
+    .row()
+    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
 
   await ctx.reply(welcomeText, { parse_mode: 'HTML', reply_markup: mainKeyboard });
 });
@@ -93,7 +96,9 @@ startComposer.command('menu', async ctx => {
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil Saya', 'start:profile')
-    .text('🔗 Referral', 'start:ref');
+    .text('🔗 Referral', 'start:ref')
+    .row()
+    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
 
   await ctx.reply(
     `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`,
@@ -101,7 +106,8 @@ startComposer.command('menu', async ctx => {
   );
 });
 
-startComposer.command('help', async ctx => {
+export function renderHelpContent() {
+  const contact = getAdminContactInfo();
   const helpText =
     `📖 <b>Panduan Penggunaan Bot</b>\n\n` +
     `1. <b>Cara Mengunduh Media:</b>\n` +
@@ -132,9 +138,39 @@ startComposer.command('help', async ctx => {
     `   • 📊 Lihat ringkasan &amp; laporan pengeluaran harian/bulanan\n` +
     `   • 🌟 VIP &amp; Admin gratis biaya AI.\n\n` +
     `5. <b>Status VIP:</b>\n` +
-    `   Ingin download tanpa potong koin selamanya? Dukung kami dengan paket VIP di /dukung (/topup) atau tukarkan 1.500 koin game Anda di /tukar!`;
+    `   Ingin download tanpa potong koin selamanya? Dukung kami dengan paket VIP di /dukung (/topup) atau tukarkan 1.500 koin game Anda di /tukar!\n\n` +
+    `6. <b>📞 Bantuan &amp; Kontak Admin:</b>\n` +
+    `   Mengalami kendala unduhan, top-up bermasalah, atau pertanyaan seputar fitur?\n` +
+    `   Hubungi Admin kami: <b>${escapeHtml(contact.display)}</b> melalui tombol di bawah ini.`;
 
-  await ctx.reply(helpText, { parse_mode: 'HTML' });
+  const keyboard = new InlineKeyboard();
+  if (contact.isAvailable) {
+    keyboard.url('💬 Hubungi Admin', contact.getContactUrl('Halo Admin, saya butuh bantuan bot'));
+  }
+  keyboard
+    .row()
+    .text('💖 Dukung / Beli Koin', 'topup:menu')
+    .text('📋 Menu Utama', 'start:mainmenu');
+
+  return { text: helpText, keyboard };
+}
+
+startComposer.command('help', async ctx => {
+  const { text, keyboard } = renderHelpContent();
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+});
+
+// Callback tombol [ℹ️ Bantuan & Kontak Admin] dari menu utama
+startComposer.callbackQuery('start:help', async ctx => {
+  await ctx.answerCallbackQuery();
+  const { text, keyboard } = renderHelpContent();
+  if (ctx.callbackQuery.message) {
+    await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
+      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    });
+  } else {
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+  }
 });
 
 startComposer.command('profile', async ctx => {
@@ -239,12 +275,18 @@ startComposer.callbackQuery('start:mainmenu', async ctx => {
     .text('🎁 Klaim Harian', 'game:action:claim')
     .row()
     .text('📊 Profil Saya', 'start:profile')
-    .text('🔗 Referral', 'start:ref');
+    .text('🔗 Referral', 'start:ref')
+    .row()
+    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
 
-  await ctx.reply(
-    `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`,
-    { parse_mode: 'HTML', reply_markup: keyboard }
-  );
+  const text = `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`;
+  if (ctx.callbackQuery.message) {
+    await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
+      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+    });
+  } else {
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
+  }
 });
 
 // Callback handler untuk tombol [🔗 Ajak Teman]

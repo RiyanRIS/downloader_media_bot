@@ -52,6 +52,8 @@ if (!fs.existsSync(resolvedTmpDir)) {
 export const config = {
   botToken: process.env.BOT_TOKEN || '',
   adminIds: parseAdminIds(process.env.ADMIN_IDS),
+  adminContactUsername: process.env.ADMIN_CONTACT_USERNAME || '',
+  adminContactUrl: process.env.ADMIN_CONTACT_URL || '',
   databasePath: process.env.DATABASE_PATH || './bot.db',
   tmpDir: resolvedTmpDir,
   ytDlpPath: process.env.YT_DLP_PATH || 'yt-dlp',

@@ -5,6 +5,7 @@ import { transactionRepository, parseDbDate } from '../../database/repositories/
 import { qrisService, TOPUP_PACKAGES } from '../../services/qrisService.js';
 import { config } from '../../config/config.js';
 import { escapeHtml } from '../../utils/format.js';
+import { getAdminContactInfo } from '../../utils/contact.js';
 
 export const vipComposer = new Composer<MyContext>();
 
@@ -272,12 +273,19 @@ vipComposer.callbackQuery(/^reject_tx:([A-Za-z0-9_]+)$/, async ctx => {
     }).catch(() => {});
   }
 
+  const contact = getAdminContactInfo();
+  const userKeyboard = new InlineKeyboard();
+  if (contact.isAvailable) {
+    userKeyboard.url('💬 Hubungi Admin', contact.getContactUrl(`Halo Admin, konfirmasi penolakan Order ID: ${orderId}`));
+  }
+  userKeyboard.row().text('🔄 Pesan Paket Ulang', 'topup:menu');
+
   await ctx.api.sendMessage(
     tx.telegram_id,
     `❌ <b>Pembayaran Ditolak.</b>\n` +
     `Bukti transfer untuk Order ID <code>${orderId}</code> tidak dapat divalidasi oleh Admin.\n` +
-    `Silakan hubungi Admin jika terdapat kekeliruan mutasi atau buat pesanan ulang via /dukung atau /topup.`,
-    { parse_mode: 'HTML' }
+    `Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi atau buat pesanan ulang via /dukung atau /topup.`,
+    { parse_mode: 'HTML', reply_markup: userKeyboard }
   ).catch(() => {});
 });
 
@@ -336,10 +344,17 @@ vipComposer.callbackQuery(/^reject_vip:(\d+)$/, async ctx => {
     reply_markup: undefined
   }).catch(() => {});
 
+  const contact = getAdminContactInfo();
+  const rejectKeyboard = new InlineKeyboard();
+  if (contact.isAvailable) {
+    rejectKeyboard.url('💬 Hubungi Admin', contact.getContactUrl('Halo Admin, konfirmasi penolakan bukti transfer saya'));
+  }
+  rejectKeyboard.row().text('🔄 Pesan Paket Ulang', 'topup:menu');
+
   await ctx.api.sendMessage(
     targetUserId,
-    '❌ <b>Bukti Pembayaran Ditolak.</b>\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin jika terdapat kekeliruan.',
-    { parse_mode: 'HTML' }
+    `❌ <b>Bukti Pembayaran Ditolak.</b>\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi.`,
+    { parse_mode: 'HTML', reply_markup: rejectKeyboard }
   ).catch(() => {});
 });
 

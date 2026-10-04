@@ -58,9 +58,12 @@ src/
 │       ├── expense.ts           # /catat <cerita>, /struk (foto struk OCR), /keuangan, /laporan, inline edit category/notes/delete
 │       ├── game.ts              # /games, /family100, /tebakgambar, /dice, /slot, /tebak, /claim, /koin, /tukar, /leaderboard
 │       ├── download.ts          # Tangkap link, status progress dinamis, inline button format, upload & unlink
-│       ├── topup.ts             # QRIS Dinamis & Katalog Paket Koin
-│       ├── vip.ts               # Verifikasi manual bukti pembayaran QRIS/VIP ke Admin
+│       ├── topup.ts             # QRIS Dinamis & Katalog Paket Koin (+ CS / Info Kontak Admin & button invoice)
+│       ├── vip.ts               # Verifikasi manual bukti pembayaran QRIS/VIP ke Admin (+ button kontak saat tolak)
 │       └── admin.ts             # /health, /stats, /backup, /reboot, /cleancache, /speedtest, /updatedlp, /broadcast
+├── utils/
+│   ├── format.ts                # escapeHtml, formatRupiah
+│   └── contact.ts               # getAdminContactInfo (resolve .env username/custom URL & database fallback)
 └── index.ts                     # Bootstrap migrasi, verifikasi binary yt-dlp, startup cleaner, graceful shutdown
 ```
 

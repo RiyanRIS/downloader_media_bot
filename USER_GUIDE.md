@@ -30,6 +30,7 @@ Bot ini mengusung konsep **Button-First UX** — Anda tidak perlu repot mengetik
   * 🎁 **Klaim Harian:** Ambil koin dan EXP gratis setiap 24 jam.
   * 📊 **Profil & Statistik:** Cek level, sisa kuota, dan winrate game.
   * 🔗 **Referral:** Bagikan link undangan untuk mendapatkan bonus koin.
+  * ℹ️ **Bantuan & Kontak Admin:** Panduan lengkap bot serta akses langsung chat ke Administrator.
 
 ---
 
@@ -270,10 +271,14 @@ graph TD
 
 ---
 
-### C. Ketentuan & Informasi Penting:
+### C. Ketentuan & Layanan Bantuan (CS):
 * ⏱️ **Batas Waktu Pembayaran:** Setiap pesanan berlaku selama **30 menit**.
 * ❌ **Batalkan Pesanan:** Jika Anda ingin mengganti paket sebelum membayar, cukup tekan tombol **`❌ Batalkan Pesanan`** pada pesan kode QRIS.
-* 🛡️ **Aman & Terpercaya:** Pembayaran diproses dengan standar QRIS Nasional Indonesia dan diverifikasi langsung oleh Administrator.
+* 💬 **Bantuan Kendala QRIS:** Jika saldo koin belum bertambah setelah transfer atau Anda butuh bantuan, gunakan:
+  * Tombol **`💬 Tanya Admin / CS`** pada katalog menu `/topup`.
+  * Tombol **`💬 Butuh Bantuan?`** di bawah gambar kode QRIS (pesan otomatis terisi dengan *Order ID* Anda).
+* 🛡️ **Klarifikasi Penolakan Transfer:** Jika struk Anda tidak sengaja ditolak karena nominal tidak pas atau foto buram, bot akan mengirimkan tombol **`[💬 Hubungi Admin]`** agar Anda bisa langsung mengonfirmasi mutasi rekening ke Admin.
+* 🔒 **Aman & Terpercaya:** Pembayaran diproses dengan standar QRIS Nasional Indonesia dan diverifikasi langsung oleh Administrator.
 
 ---
 
@@ -318,7 +323,7 @@ Agar bot dapat berjalan optimal saat dimasukkan ke dalam grup (terutama untuk ga
 * `/menu` — Pintasan cepat ke keyboard menu bot.
 * `/profile` — Cek status akun, level, saldo koin, dan sisa kuota hari ini.
 * `/ref` — Dapatkan link referral undangan Anda.
-* `/help` — Bantuan cepat penggunaan bot.
+* `/help` — Buka panduan lengkap bot interaktif dilengkapi tombol hubungi Admin CS.
 
 ### 💰 Keuangan & Kas Keluarga
 * `/keuangan` atau `/laporan` — Buka ringkasan dompet pribadi atau kas grup.
@@ -359,6 +364,12 @@ A: Bot otomatis memilih resolusi optimal (720p) yang memiliki keseimbangan sempu
 
 **Q: Apakah ada batasan jumlah unduhan per hari?**  
 A: **Tidak ada batasan harian!** Bot menggunakan sistem ekonomi koin, sehingga Anda bebas mengunduh media sebanyak apa pun setiap hari tanpa limit kuota harian, selama saldo koin Anda mencukupi (5 koin per unduhan untuk Free User, atau **GRATIS sepuasnya tanpa koin** untuk member VIP & Admin).
+
+**Q: Bagaimana jika pembayaran QRIS saya bermasalah atau koin belum masuk?**  
+A: Cukup tekan tombol **`💬 Butuh Bantuan?`** pada pesan gambar QRIS Anda atau tekan **`💬 Tanya Admin / CS`** di menu `/topup`. Anda akan langsung terhubung ke obrolan pribadi dengan Administrator dengan format Order ID yang sudah terisi otomatis.
+
+**Q: Bagaimana cara menghubungi Admin jika mengalami kendala bot atau ada saran fitur?**  
+A: Anda dapat menekan tombol **`ℹ️ Bantuan & Kontak Admin`** dari menu utama `/start` atau ketik perintah `/help`, lalu tekan tombol **`[💬 Hubungi Admin]`**.
 
 ---
 
