@@ -18,7 +18,8 @@ const SUPPORTED_PATTERNS = [
   /pin\.it/i,
   /bilibili\.tv/i,
   /bilibili\.com/i,
-  /b23\.tv/i
+  /b23\.tv/i,
+  /bili\.im/i
 ];
 
 /**
@@ -83,6 +84,14 @@ export function normalizeMediaUrl(rawUrl: string): string {
     // 5. Normalisasi YouTube
     if (u.hostname.includes('youtube.com') || u.hostname.includes('youtu.be')) {
       for (const p of ['si', 'feature', 'pp']) {
+        u.searchParams.delete(p);
+      }
+      return u.toString();
+    }
+
+    // 6. Normalisasi Bilibili / Bstation
+    if (u.hostname.includes('bilibili.com') || u.hostname.includes('bilibili.tv')) {
+      for (const p of ['spm_id_from', 'from_source', 'from', 'seid', 'share_source', 'share_medium', 'share_plat', 'share_session_id', 'share_tag', 'unique_k', 'csource', 'bbid', 'ts', 'bstar_from']) {
         u.searchParams.delete(p);
       }
       return u.toString();

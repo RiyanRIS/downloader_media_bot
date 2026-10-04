@@ -4,6 +4,7 @@ import fs from 'fs';
 import pLimit from 'p-limit';
 import { config } from '../config/config.js';
 import { photoService } from './photoService.js';
+import { normalizeMediaUrl } from '../bot/middlewares/urlDetector.js';
 
 export interface MediaMetadata {
   id: string;
@@ -42,8 +43,33 @@ export function detectPlatform(url: string): MediaMetadata['platform'] {
   if (lower.includes('facebook.com') || lower.includes('fb.watch') || lower.includes('fb.com')) return 'facebook';
   if (lower.includes('reddit.com') || lower.includes('redd.it')) return 'reddit';
   if (lower.includes('pinterest.') || lower.includes('pin.it')) return 'pinterest';
-  if (lower.includes('bilibili.') || lower.includes('b23.tv')) return 'bilibili';
+  if (lower.includes('bilibili.') || lower.includes('b23.tv') || lower.includes('bili.im')) return 'bilibili';
   return 'generic';
+}
+
+/**
+ * Menyelesaikan tautan pendek / redirect (misal bili.im, b23.tv) ke URL kanonikal asli
+ */
+export async function resolveShortUrl(url: string): Promise<string> {
+  const lower = url.toLowerCase();
+  if (lower.includes('bili.im') || lower.includes('b23.tv')) {
+    try {
+      const res = await fetch(url, {
+        method: 'HEAD',
+        redirect: 'follow',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(6000)
+      });
+      if (res.url && res.url !== url) {
+        return normalizeMediaUrl(res.url);
+      }
+    } catch {
+      // Fallback ke url awal jika timeout atau gagal fetch
+    }
+  }
+  return url;
 }
 
 function buildBaseArgs(url?: string, forceCookies = false): string[] {
@@ -132,11 +158,12 @@ export const downloaderService = {
    * Mengambil metadata media tanpa mengunduh file utuh (Pre-check)
    */
   async getMediaInfo(url: string): Promise<MediaMetadata> {
+    const targetUrl = await resolveShortUrl(url);
     const args = [
-      ...buildBaseArgs(url),
+      ...buildBaseArgs(targetUrl),
       '--dump-single-json',
       '--ignore-no-formats-error',
-      url
+      targetUrl
     ];
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 35000); // 35 detik batas waktu fetch metadata
@@ -220,7 +247,7 @@ export const downloaderService = {
                     id: data.id || 'photo',
                     title: data.title || 'Photo',
                     extractor: data.extractor_key || data.extractor || 'unknown',
-                    platform: detectPlatform(url),
+                    platform: detectPlatform(targetUrl),
                     isOverLimit: false,
                     mediaType: 'photo',
                     photoUrls: [photoUrl]
@@ -242,7 +269,7 @@ export const downloaderService = {
                 filesizeApproxMb: Math.round(sizeMb * 10) / 10,
                 thumbnail: data.thumbnail,
                 extractor: data.extractor_key || data.extractor || 'unknown',
-                platform: detectPlatform(url),
+                platform: detectPlatform(targetUrl),
                 isOverLimit,
                 directDownloadUrl,
                 mediaType: 'video',
@@ -255,13 +282,13 @@ export const downloaderService = {
 
           // 2. Fallback provider ke photoService jika yt-dlp gagal menghasilkan data
           try {
-            const photoInfo = await photoService.getPhotoInfo(url);
+            const photoInfo = await photoService.getPhotoInfo(targetUrl);
             if (photoInfo && photoInfo.photoUrls.length > 0) {
               return resolve({
                 id: photoInfo.id,
                 title: photoInfo.title,
                 extractor: photoInfo.platform,
-                platform: detectPlatform(url),
+                platform: detectPlatform(targetUrl),
                 isOverLimit: false,
                 mediaType: photoInfo.mediaType,
                 photoUrls: photoInfo.photoUrls
@@ -292,13 +319,14 @@ export const downloaderService = {
     formatOption: 'video' | 'audio' | 'video_360p' | 'video_720p' = 'video'
   ): Promise<DownloadResult> {
     return downloadQueue(async () => {
+      const targetUrl = await resolveShortUrl(url);
       const timestamp = Date.now();
       const randomStr = Math.random().toString(36).substring(2, 8);
       const isAudio = formatOption === 'audio';
       const ext = isAudio ? 'mp3' : 'mp4';
       const outputTemplate = path.join(config.tmpDir, `dl_${timestamp}_${randomStr}.%(ext)s`);
 
-      const args = [...buildBaseArgs(url)];
+      const args = [...buildBaseArgs(targetUrl)];
 
       if (isAudio) {
         // Ekstraksi Audio MP3
@@ -307,7 +335,7 @@ export const downloaderService = {
           '--audio-format', 'mp3',
           '--audio-quality', '0',
           '-o', outputTemplate,
-          url
+          targetUrl
         );
       } else if (formatOption === 'video_360p') {
         // Format video 360p (mendukung landscape & potret YouTube Shorts/Reels/TikTok)
@@ -316,7 +344,7 @@ export const downloaderService = {
           '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
-          url
+          targetUrl
         );
       } else if (formatOption === 'video_720p') {
         // Format video 720p (mendukung landscape & potret YouTube Shorts/Reels/TikTok)
@@ -325,7 +353,7 @@ export const downloaderService = {
           '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
-          url
+          targetUrl
         );
       } else {
         // Default video: utamakan hingga 720p agar hemat kuota & aman batas Telegram API 50MB
@@ -334,7 +362,7 @@ export const downloaderService = {
           '-f', 'bestvideo+bestaudio/best',
           '--merge-output-format', 'mp4',
           '-o', outputTemplate,
-          url
+          targetUrl
         );
       }
 

@@ -120,11 +120,15 @@ async function runTests() {
     const b23Url = extractMediaUrl('link short https://b23.tv/xyz123');
     assert(b23Url === 'https://b23.tv/xyz123', 'Extract Bilibili b23.tv URL');
 
+    const biliImUrl = extractMediaUrl('video seru https://bili.im/abc1234 mantul');
+    assert(biliImUrl === 'https://bili.im/abc1234', 'Extract Bilibili bili.im URL');
+
     assert(detectPlatform('https://www.facebook.com/watch/?v=123') === 'facebook', 'Detect Facebook platform');
     assert(detectPlatform('https://reddit.com/r/funny/comments/123') === 'reddit', 'Detect Reddit platform');
     assert(detectPlatform('https://pin.it/abc') === 'pinterest', 'Detect Pinterest platform');
     assert(detectPlatform('https://www.bilibili.tv/id/video/123') === 'bilibili', 'Detect Bilibili TV platform');
     assert(detectPlatform('https://b23.tv/123') === 'bilibili', 'Detect Bilibili shortlink platform');
+    assert(detectPlatform('https://bili.im/abc1234') === 'bilibili', 'Detect Bilibili bili.im platform');
 
     const nonMedia = extractMediaUrl('https://google.com/search?q=test');
     assert(nonMedia === null, 'Ignore non-supported domain');
