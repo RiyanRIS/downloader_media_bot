@@ -23,50 +23,27 @@ startComposer.command('start', async ctx => {
     return;
   }
 
-  let referrerId: number | undefined;
+  userRepository.getOrCreateUser(from.id, from.username);
+  const user = userRepository.getUser(from.id)!;
 
-  if (refPayload) {
-    const parsedRef = parseInt(refPayload, 10);
-    if (!isNaN(parsedRef) && parsedRef !== from.id) {
-      referrerId = parsedRef;
-    }
-  }
-
-  const { user, isNew } = userRepository.getOrCreateUser(from.id, from.username, referrerId);
-
-  // Jika user baru dan menggunakan kode referral, beri bonus koin ke pengajak
-  if (isNew && referrerId) {
-    const referrer = userRepository.getUser(referrerId);
-    if (referrer) {
-      userRepository.addCoins(referrerId, config.coinReferralBonus, 10);
-
-      // Kirim notifikasi ke pengajak
-      const inviterName = escapeHtml(from.username ? `@${from.username}` : from.first_name);
-      await ctx.api.sendMessage(
-        referrerId,
-        `🎉 <b>Teman Baru Bergabung!</b>\nPengguna ${inviterName} mendaftar melalui link referral Anda.\nAnda mendapatkan bonus <b>+${config.coinReferralBonus} Koin</b> (+10 EXP)!`,
-        { parse_mode: 'HTML' }
-      ).catch(() => {});
-    }
-  }
-
-  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '🌟 VIP Member' : '👤 Free User';
+  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '💖 Sahabat Dermawan' : '👤 Pengguna Aktif';
   const level = Math.floor(user.exp / 100) + 1;
 
   const welcomeText = 
     `👋 <b>Halo, ${escapeHtml(from.first_name)}!</b>\n\n` +
-    `Selamat datang di <b>Multi-Platform Downloader & STB Utility Bot</b>.\n` +
-    `Kirimkan link video, audio, foto, atau album untuk langsung diunduh secara instan!\n\n` +
+    `Selamat datang di <b>Multi-Platform Downloader & Komunitas Bot</b>.\n` +
+    `Kirimkan link video, audio, atau foto untuk langsung diunduh secara instan!\n\n` +
     `📊 <b>Status Akun:</b> ${roleBadge}\n` +
-    `💰 <b>Saldo Koin:</b> <b>${user.coins} Koin</b> (Level ${level} - ${user.exp} EXP)\n` +
-    `⚡ <b>Biaya Unduhan:</b> ${user.role === 'vip' || user.role === 'admin' ? 'Gratis (VIP/Admin)' : `${config.coinCostDownload} Koin per unduhan`}\n\n` +
-    `💰 <b>Catat Keuangan Cerdas (AI):</b>\n` +
-    `Tekan tombol 💰 <b>Keuangan &amp; Dompet</b> di bawah untuk catat pengeluaran &amp; lihat ringkasan.\n\n` +
-    `🎮 <b>Cara Mendapatkan Koin:</b>\n` +
+    `⭐ <b>Peringkat Keaktifan:</b> Level ${level} (<code>${user.exp}</code> EXP)\n` +
+    `⚡ <b>Biaya Layanan:</b> 100% GRATIS Selamanya (Berbasis Komunitas)\n\n` +
+    `💰 <b>Catat Keuangan & Scan Struk (AI):</b>\n` +
+    `Tekan tombol 💰 <b>Keuangan & Dompet</b> di bawah untuk catat pengeluaran & ringkasan.\n\n` +
+    `🎮 <b>Aktivitas & Kumpulkan EXP:</b>\n` +
+    `• Unduh media favorit (+2 EXP per unduhan)\n` +
     `• Mainkan mini-games seru di /games (Family 100, Tebak Gambar, Dadu, Slot, Kuis)\n` +
-    `• Klaim bonus koin harian di /claim (+50 Koin gratis setiap hari)\n` +
-    `• Ajak teman bergabung via /ref (+${config.coinReferralBonus} Koin per teman)\n` +
-    `• Dukung pengembangan tools ini dengan beli paket berbayar di /dukung (/topup)\n\n` +
+    `• Check-in harian di /claim (+20 EXP gratis setiap hari)\n\n` +
+    `💖 <b>Dukungan Sukarela (QRIS):</b>\n` +
+    `Bot ini bebas digunakan tanpa paksaan membeli paket. Jika Anda ingin mendukung kelangsungan bot, silakan berdonasi secara sukarela via /dukung.\n\n` +
     `🌐 <b>Platform yang Didukung:</b>\n` +
     `YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, Bilibili.`;
 
@@ -74,13 +51,13 @@ startComposer.command('start', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
-    .text('🎁 Klaim Harian', 'game:action:claim')
+    .text('💖 Dukung Pengembang', 'topup:menu')
+    .text('🎁 Check-in Harian', 'game:action:claim')
+    .row()
+    .text('📬 Request & Lapor Kendala', 'feedback:menu')
     .row()
     .text('📊 Profil & Statistik', 'start:profile')
-    .text(`🔗 Referral (+${config.coinReferralBonus} Koin)`, 'start:ref')
-    .row()
-    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
+    .text('ℹ️ Panduan & Kontak Admin', 'start:help');
 
   await ctx.reply(welcomeText, { parse_mode: 'HTML', reply_markup: mainKeyboard });
 });
@@ -92,13 +69,13 @@ startComposer.command('menu', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
-    .text('🎁 Klaim Harian', 'game:action:claim')
+    .text('💖 Dukung Pengembang', 'topup:menu')
+    .text('🎁 Check-in Harian', 'game:action:claim')
+    .row()
+    .text('📬 Request & Lapor Kendala', 'feedback:menu')
     .row()
     .text('📊 Profil Saya', 'start:profile')
-    .text('🔗 Referral', 'start:ref')
-    .row()
-    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
+    .text('ℹ️ Panduan & Kontak Admin', 'start:help');
 
   await ctx.reply(
     `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`,
@@ -113,35 +90,36 @@ export function renderHelpContent() {
     `1. <b>Cara Mengunduh Media:</b>\n` +
     `   Cukup salin dan tempelkan tautan dari YouTube, TikTok, Instagram, X/Twitter, Threads, Facebook, Reddit, Pinterest, atau Bilibili ke obrolan ini.\n` +
     `   Pilih format yang diinginkan (Video, Audio MP3, atau Foto/Album).\n` +
-    `   Setiap unduhan membutuhkan <b>${config.coinCostDownload} Koin</b> (Gratis untuk member VIP & Admin).\n\n` +
+    `   Seluruh unduhan <b>100% GRATIS SELAMANYA</b> tanpa batas kuota atau potongan koin!\n\n` +
     `2. <b>Daftar Perintah Pengguna:</b>\n` +
-    `   • /start - Pesan pembuka dan status saldo koin.\n` +
-    `   • /profile - Detail profil, saldo koin, level EXP, dan statistik.\n` +
-    `   • /ref - Link referral untuk mendapatkan +${config.coinReferralBonus} koin per teman.\n` +
-    `   • /dukung atau /topup - Dukung pengembangan tools ini dengan beli paket berbayar (Koin & VIP).\n` +
+    `   • /start - Pesan pembuka dan informasi akun.\n` +
+    `   • /menu - Navigasi tombol menu utama.\n` +
+    `   • /profile - Profil akun, level EXP keaktifan, dan statistik.\n` +
+    `   • /saran atau /request - Usulkan ide atau fitur baru untuk bot.\n` +
+    `   • /lapor atau /bug - Laporkan kendala, bug, atau link rusak.\n` +
+    `   • /feedback - Menu request fitur & lapor kendala.\n` +
+    `   • /dukung atau /donasi - Dukungan sukarela pengembang via QRIS (nominal bebas).\n` +
+    `   • /donatur - Lihat daftar donatur & sahabat dermawan bulan ini.\n` +
     `   • /help - Panduan lengkap bot.\n\n` +
-    `3. <b>🎮 Mini-Games & Hiburan:</b>\n` +
+    `3. <b>🎮 Mini-Games & Komunitas:</b>\n` +
     `   • /games - Katalog arena mini-games.\n` +
-    `   • /family100 atau /f100 - Game survei Family 100.\n` +
-    `   • /tebakgambar atau /tg - Permainan tebak gambar.\n` +
-    `   • /dice &lt;taruhan&gt; - Lempar dadu lawan bot.\n` +
-    `   • /slot &lt;taruhan&gt; - Putar mesin slot jackpot.\n` +
-    `   • /tebak - Kuis tebak-tebakan logika.\n` +
-    `   • /claim - Klaim bonus harian +50 koin gratis.\n` +
-    `   • /koin - Cek saldo koin dan level EXP.\n` +
-    `   • /tukar - Tukar koin game jadi Status VIP 30 Hari!\n` +
-    `   • /leaderboard - Papan peringkat Top Koin & Top EXP.\n\n` +
-    `4. <b>💰 Catat Keuangan &amp; Pengeluaran (AI):</b>\n` +
+    `   • /family100 atau /f100 - Game survei Family 100 (+2 EXP per tebakan).\n` +
+    `   • /tebakgambar atau /tg - Tebak gambar interaktif (+5 EXP).\n` +
+    `   • /dice atau /dadu - Lempar dadu seru lawan bot (+5 EXP).\n` +
+    `   • /slot - Putar mesin slot jackpot (hingga +25 EXP).\n` +
+    `   • /tebak - Kuis pilihan ganda (+5 EXP).\n` +
+    `   • /claim - Check-in harian (+20 EXP gratis setiap hari).\n` +
+    `   • /leaderboard - Papan peringkat pengguna paling aktif (Top EXP).\n\n` +
+    `4. <b>💰 Catat Keuangan & Pengeluaran (AI):</b>\n` +
     `   Tekan tombol 💰 <b>Keuangan &amp; Dompet</b> di menu utama untuk:\n` +
-    `   • 📝 Catat pengeluaran dari cerita belanja teks (${config.coinCostExpenseText} Koin)\n` +
-    `   • 🧾 Scan foto struk belanja otomatis via AI (${config.coinCostExpenseReceipt} Koin)\n` +
-    `   • 📊 Lihat ringkasan &amp; laporan pengeluaran harian/bulanan\n` +
-    `   • 🌟 VIP &amp; Admin gratis biaya AI.\n\n` +
-    `5. <b>Status VIP:</b>\n` +
-    `   Ingin download tanpa potong koin selamanya? Dukung kami dengan paket VIP di /dukung (/topup) atau tukarkan 1.500 koin game Anda di /tukar!\n\n` +
+    `   • 📝 Catat pengeluaran dari cerita belanja teks (/catat)\n` +
+    `   • 🧾 Scan foto struk belanja otomatis via AI (/struk)\n` +
+    `   • 📊 Lihat ringkasan &amp; laporan pengeluaran harian/bulanan\n\n` +
+    `5. <b>💖 Dukungan Komunitas (QRIS):</b>\n` +
+    `   Bot ini beroperasi secara independen tanpa membebankan tarif kepada pengguna. Jika Anda merasa terbantu, donasi sukarela dapat disalurkan melalui perintah /dukung.\n\n` +
     `6. <b>📞 Bantuan &amp; Kontak Admin:</b>\n` +
-    `   Mengalami kendala unduhan, top-up bermasalah, atau pertanyaan seputar fitur?\n` +
-    `   Hubungi Admin kami: <b>${escapeHtml(contact.display)}</b> melalui tombol di bawah ini.`;
+    `   Pertanyaan seputar fitur atau kendala bot?\n` +
+    `   Hubungi Admin: <b>${escapeHtml(contact.display)}</b> melalui tombol di bawah ini.`;
 
   const keyboard = new InlineKeyboard();
   if (contact.isAvailable) {
@@ -149,7 +127,9 @@ export function renderHelpContent() {
   }
   keyboard
     .row()
-    .text('💖 Dukung / Beli Koin', 'topup:menu')
+    .text('📬 Request & Lapor Kendala', 'feedback:menu')
+    .text('💖 Dukung Pengembang', 'topup:menu')
+    .row()
     .text('📋 Menu Utama', 'start:mainmenu');
 
   return { text: helpText, keyboard };
@@ -177,14 +157,13 @@ startComposer.command('profile', async ctx => {
   if (!ctx.user) return;
 
   const user = userRepository.getUser(ctx.user.telegram_id)!;
-  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '🌟 VIP Member' : '👤 Free User';
-  const totalRefs = userRepository.countReferrals(user.telegram_id);
+  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '💖 Sahabat Dermawan' : '👤 Pengguna Aktif';
   const level = Math.floor(user.exp / 100) + 1;
 
   let vipInfo = '';
   if (user.role === 'vip' && user.vip_expires_at) {
     const exp = new Date(user.vip_expires_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    vipInfo = `\n⏳ <b>Masa Aktif VIP Sampai:</b> ${exp}`;
+    vipInfo = `\n⏳ <b>Gelar Sahabat Dermawan Sampai:</b> ${exp}`;
   }
 
   const profileText =
@@ -192,17 +171,16 @@ startComposer.command('profile', async ctx => {
     `• <b>ID Telegram:</b> <code>${user.telegram_id}</code>\n` +
     `• <b>Username:</b> @${escapeHtml(user.username || '-')}\n` +
     `• <b>Status Akun:</b> ${roleBadge}${vipInfo}\n` +
-    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b>\n` +
-    `• <b>Peringkat Level:</b> ⭐ Level ${level} (${user.exp} EXP)\n` +
+    `• <b>Peringkat Keaktifan:</b> ⭐ Level ${level} (<b>${user.exp} EXP</b>)\n` +
     `• <b>Total Permainan:</b> ${user.games_played} main (${user.games_won}x menang)\n` +
-    `• <b>Total Unduhan:</b> ${user.daily_usage} media\n` +
-    `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
-    `💡 <i>Kumpulkan koin dengan main game di /games atau isi ulang instan di /topup!</i>`;
+    `• <b>Total Unduhan:</b> ${user.daily_usage} media\n\n` +
+    `✨ <i>Seluruh layanan bot 100% gratis. Kumpulkan EXP keaktifan untuk bersaing di papan peringkat /leaderboard!</i>`;
 
   const keyboard = new InlineKeyboard()
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan', 'keuangan:menu')
     .row()
+    .text('💖 Dukung Pengembang', 'topup:menu')
     .text('📋 Menu Utama', 'start:mainmenu');
 
   await ctx.reply(profileText, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -216,14 +194,13 @@ startComposer.callbackQuery('start:profile', async ctx => {
   const user = userRepository.getUser(ctx.from.id);
   if (!user) return;
 
-  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '🌟 VIP Member' : '👤 Free User';
-  const totalRefs = userRepository.countReferrals(user.telegram_id);
+  const roleBadge = user.role === 'admin' ? '👑 Admin' : user.role === 'vip' ? '💖 Sahabat Dermawan' : '👤 Pengguna Aktif';
   const level = Math.floor(user.exp / 100) + 1;
 
   let vipInfo = '';
   if (user.role === 'vip' && user.vip_expires_at) {
     const exp = new Date(user.vip_expires_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
-    vipInfo = `\n⏳ <b>Masa Aktif VIP Sampai:</b> ${exp}`;
+    vipInfo = `\n⏳ <b>Gelar Sahabat Dermawan Sampai:</b> ${exp}`;
   }
 
   const profileText =
@@ -231,37 +208,19 @@ startComposer.callbackQuery('start:profile', async ctx => {
     `• <b>ID Telegram:</b> <code>${user.telegram_id}</code>\n` +
     `• <b>Username:</b> @${escapeHtml(user.username || '-')}\n` +
     `• <b>Status Akun:</b> ${roleBadge}${vipInfo}\n` +
-    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b>\n` +
-    `• <b>Peringkat Level:</b> ⭐ Level ${level} (${user.exp} EXP)\n` +
+    `• <b>Peringkat Keaktifan:</b> ⭐ Level ${level} (<b>${user.exp} EXP</b>)\n` +
     `• <b>Total Permainan:</b> ${user.games_played} main (${user.games_won}x menang)\n` +
-    `• <b>Total Unduhan:</b> ${user.daily_usage} media\n` +
-    `• <b>Teman yang Diundang:</b> ${totalRefs} orang\n\n` +
-    `💡 <i>Kumpulkan koin dengan main game di /games atau isi ulang instan di /topup!</i>`;
+    `• <b>Total Unduhan:</b> ${user.daily_usage} media\n\n` +
+    `✨ <i>Seluruh layanan bot 100% gratis. Kumpulkan EXP keaktifan untuk bersaing di papan peringkat /leaderboard!</i>`;
 
   const keyboard = new InlineKeyboard()
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan', 'keuangan:menu')
     .row()
+    .text('💖 Dukung Pengembang', 'topup:menu')
     .text('📋 Menu Utama', 'start:mainmenu');
 
   await ctx.reply(profileText, { parse_mode: 'HTML', reply_markup: keyboard });
-});
-
-startComposer.command('ref', async ctx => {
-  if (!ctx.user) return;
-
-  const botInfo = await ctx.api.getMe();
-  const refLink = `https://t.me/${botInfo.username}?start=${ctx.user.telegram_id}`;
-  const totalRefs = userRepository.countReferrals(ctx.user.telegram_id);
-
-  const refText =
-    `🔗 <b>Program Referral Bot</b>\n\n` +
-    `Bagikan link referral Anda kepada teman atau grup untuk mendapatkan koin gratis!\n\n` +
-    `• <b>Link Referral Anda:</b>\n<code>${refLink}</code>\n\n` +
-    `🎁 <b>Bonus Hadiah:</b> Setiap pengguna baru yang bergabung melalui link Anda, Anda akan mendapatkan <b>+${config.coinReferralBonus} Koin</b> (+10 EXP).\n` +
-    `👥 <b>Total Teman Terundang:</b> ${totalRefs} pengguna`;
-
-  await ctx.reply(refText, { parse_mode: 'HTML' });
 });
 
 // Callback: tombol menu utama
@@ -271,13 +230,13 @@ startComposer.callbackQuery('start:mainmenu', async ctx => {
     .text('🎮 Arena Games', 'game:nav:menu')
     .text('💰 Keuangan & Dompet', 'keuangan:menu')
     .row()
-    .text('💖 Dukung Bot (Paket Berbayar)', 'topup:menu')
-    .text('🎁 Klaim Harian', 'game:action:claim')
+    .text('💖 Dukung Pengembang', 'topup:menu')
+    .text('🎁 Check-in Harian', 'game:action:claim')
+    .row()
+    .text('📬 Request & Lapor Kendala', 'feedback:menu')
     .row()
     .text('📊 Profil Saya', 'start:profile')
-    .text('🔗 Referral', 'start:ref')
-    .row()
-    .text('ℹ️ Bantuan & Kontak Admin', 'start:help');
+    .text('ℹ️ Panduan & Kontak Admin', 'start:help');
 
   const text = `📋 <b>Menu Utama Bot</b>\n\nPilih salah satu menu di bawah ini:`;
   if (ctx.callbackQuery.message) {
@@ -287,21 +246,4 @@ startComposer.callbackQuery('start:mainmenu', async ctx => {
   } else {
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
   }
-});
-
-// Callback handler untuk tombol [🔗 Ajak Teman]
-startComposer.callbackQuery('start:ref', async ctx => {
-  await ctx.answerCallbackQuery();
-  const botInfo = await ctx.api.getMe();
-  const refLink = `https://t.me/${botInfo.username}?start=${ctx.from.id}`;
-  const totalRefs = userRepository.countReferrals(ctx.from.id);
-
-  const refText =
-    `🔗 <b>Program Referral Bot</b>\n\n` +
-    `Bagikan link referral Anda untuk mendapatkan koin unduhan gratis!\n\n` +
-    `• <b>Link Referral Anda:</b>\n<code>${refLink}</code>\n\n` +
-    `🎁 <b>Bonus Hadiah:</b> Setiap teman baru bergabung, Anda mendapat <b>+${config.coinReferralBonus} Koin</b> (+10 EXP).\n` +
-    `👥 <b>Total Teman Terundang:</b> ${totalRefs} pengguna`;
-
-  await ctx.reply(refText, { parse_mode: 'HTML' });
 });

@@ -5,7 +5,8 @@ import { systemService } from '../../services/systemService.js';
 import { downloaderService } from '../../services/downloaderService.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
 import { downloadRepository } from '../../database/repositories/downloadRepository.js';
-import { transactionRepository } from '../../database/repositories/transactionRepository.js';
+import { donationRepository } from '../../database/repositories/donationRepository.js';
+import { feedbackRepository } from '../../database/repositories/feedbackRepository.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -28,6 +29,8 @@ adminComposer.use(async (ctx, next) => {
         ctx.message?.text?.startsWith('/delvip') ||
         ctx.message?.text?.startsWith('/ban') ||
         ctx.message?.text?.startsWith('/unban') ||
+        ctx.message?.text?.startsWith('/addexp') ||
+        ctx.message?.text?.startsWith('/setexp') ||
         ctx.message?.text?.startsWith('/addkoin') ||
         ctx.message?.text?.startsWith('/delkoin') ||
         ctx.message?.text?.startsWith('/setkoin') ||
@@ -40,9 +43,9 @@ adminComposer.use(async (ctx, next) => {
   return next();
 });
 
-// 1. /health - Monitoring Performa STB
+// 1. /health - Monitoring Performa Server
 adminComposer.command('health', async ctx => {
-  const statusMsg = await ctx.reply('⏳ Mengumpulkan metrik sistem STB...');
+  const statusMsg = await ctx.reply('⏳ Mengumpulkan metrik sistem server...');
   try {
     const health = await systemService.getHealth();
 
@@ -50,7 +53,7 @@ adminComposer.command('health', async ctx => {
     const ramEmoji = health.ramUsedPercent > 80 ? '⚠️' : '📊';
 
     const healthText =
-      `🖥 **Status & Kesehatan STB (${health.osName})**\n\n` +
+      `🖥 **Status & Kesehatan Server (${health.osName})**\n\n` +
       `${tempEmoji} **Suhu CPU:** ${health.cpuTempC !== null ? `${health.cpuTempC} °C` : 'N/A (Virtual/No Sensor)'}\n` +
       `⚡ **Beban CPU:** ${health.cpuLoadPercent}%\n` +
       `${ramEmoji} **Penggunaan RAM:** ${health.ramUsedMb} MB / ${health.ramTotalMb} MB (${health.ramUsedPercent}%)\n` +
@@ -69,7 +72,8 @@ adminComposer.command('stats', async ctx => {
   const userStats = userRepository.getUserStats();
   const dlStats = downloadRepository.getStats();
   const todayCount = downloadRepository.getTodayCount();
-  const txStats = transactionRepository.getStats();
+  const donationStats = donationRepository.getStats();
+  const fbStats = feedbackRepository.getStats();
 
   let platformBreakdown = '';
   for (const [plat, count] of Object.entries(dlStats.byPlatform)) {
@@ -77,18 +81,21 @@ adminComposer.command('stats', async ctx => {
   }
   if (!platformBreakdown) platformBreakdown = '• Belum ada transaksi\n';
 
-  const formattedRev = new Intl.NumberFormat('id-ID').format(txStats.totalRevenue);
+  const formattedRev = new Intl.NumberFormat('id-ID').format(donationStats.totalRevenue);
 
   const statsText =
     `📈 **Statistik Bot & Pengunduhan**\n\n` +
     `👥 **Statistik Pengguna:**\n` +
     `• Total Pengguna: ${userStats.total}\n` +
-    `• Pengguna VIP: ${userStats.vip}\n` +
+    `• Sahabat Dermawan (VIP): ${userStats.vip}\n` +
     `• Pengguna Diblokir: ${userStats.banned}\n` +
     `• Total Admin: ${userStats.admins}\n\n` +
-    `💰 **Statistik Penjualan Top-Up QRIS:**\n` +
-    `• Total Omset: Rp ${formattedRev}\n` +
-    `• Top-Up Berhasil: ${txStats.totalSuccess} transaksi\n\n` +
+    `💖 **Statistik Dukungan Donasi Komunitas (QRIS):**\n` +
+    `• Total Donasi Terkumpul: Rp ${formattedRev}\n` +
+    `• Donasi Berhasil: ${donationStats.totalSuccess} donasi\n\n` +
+    `📬 **Masukan & Kendala Komunitas:**\n` +
+    `• Total Masukan: ${fbStats.total} (💡 ${fbStats.suggestions} saran, 🚨 ${fbStats.bugs} bug)\n` +
+    `• Status: ⏳ ${fbStats.pending} pending, 👀 ${fbStats.read} dibaca, ✅ ${fbStats.resolved} selesai\n\n` +
     `📥 **Statistik Unduhan:**\n` +
     `• Unduhan Hari Ini: ${todayCount}\n` +
     `• Total Seluruh Unduhan: ${dlStats.totalDownloads}\n\n` +
@@ -120,27 +127,27 @@ adminComposer.command('backup', async ctx => {
   }
 });
 
-// 4. /cleancache - Melegakan RAM di STB (Linux drop_caches)
+// 4. /cleancache - Melegakan RAM di Server (Linux drop_caches)
 adminComposer.command('cleancache', async ctx => {
   const result = await systemService.cleanCache();
   await ctx.reply(result.message);
 });
 
-// 5. /speedtest - Uji kecepatan jaringan STB
+// 5. /speedtest - Uji kecepatan jaringan Server
 adminComposer.command('speedtest', async ctx => {
-  const statusMsg = await ctx.reply('⚡ Sedang menguji kecepatan jaringan STB (10MB payload)...');
+  const statusMsg = await ctx.reply('⚡ Sedang menguji kecepatan jaringan server (10MB payload)...');
   const result = await systemService.runSimpleSpeedtest();
   await ctx.api.editMessageText(ctx.chat.id, statusMsg.message_id, result, { parse_mode: 'Markdown' });
 });
 
-// 6. /reboot - Restart STB Jarak Jauh
+// 6. /reboot - Restart Server Jarak Jauh
 adminComposer.command('reboot', async ctx => {
   const keyboard = new InlineKeyboard()
-    .text('⚠️ Ya, Reboot STB Sekarang', 'confirm_reboot')
+    .text('⚠️ Ya, Reboot Server Sekarang', 'confirm_reboot')
     .text('❌ Batal', 'cancel_reboot');
 
   await ctx.reply(
-    '⚠️ **Konfirmasi Reboot STB**\nApakah Anda yakin ingin me-restart sistem STB? Bot akan offline selama proses boot berlangsung.',
+    '⚠️ **Konfirmasi Reboot Server**\nApakah Anda yakin ingin me-restart sistem server? Bot akan offline selama proses boot berlangsung.',
     { reply_markup: keyboard, parse_mode: 'Markdown' }
   );
 });
@@ -148,7 +155,7 @@ adminComposer.command('reboot', async ctx => {
 adminComposer.callbackQuery('confirm_reboot', async ctx => {
   if (!config.isAdmin(ctx.from.id)) return;
   await ctx.answerCallbackQuery({ text: 'Memulai proses reboot...' });
-  await ctx.editMessageText('🔄 Menjalankan reboot sistem STB...');
+  await ctx.editMessageText('🔄 Menjalankan reboot sistem server...');
   const result = await systemService.reboot();
   await ctx.reply(result.message);
 });
@@ -232,6 +239,61 @@ adminComposer.command('setlimit', async ctx => {
   } else {
     await ctx.reply('❌ User ID tidak ditemukan di database.');
   }
+});
+
+// 10a. /addexp <user_id> <jumlah>
+adminComposer.command('addexp', async ctx => {
+  const parts = ctx.match?.trim().split(/\s+/);
+  if (!parts || parts.length < 2) {
+    await ctx.reply('ℹ️ Format salah. Gunakan: `/addexp <user_id> <jumlah>`\nContoh: `/addexp 123456789 100`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const targetId = parseInt(parts[0], 10);
+  const amount = parseInt(parts[1], 10);
+
+  if (isNaN(targetId) || isNaN(amount) || amount <= 0) {
+    await ctx.reply('❌ ID atau jumlah EXP tidak valid.');
+    return;
+  }
+
+  const user = userRepository.getUser(targetId);
+  if (!user) {
+    await ctx.reply('❌ User ID tidak ditemukan di database.');
+    return;
+  }
+
+  userRepository.addExp(targetId, amount);
+  const updated = userRepository.getUser(targetId)!;
+
+  await ctx.reply(`✅ Berhasil menambahkan *+${amount} EXP* ke user \`${targetId}\`.\nTotal EXP sekarang: *${updated.exp} EXP*.`, { parse_mode: 'Markdown' });
+  await ctx.api.sendMessage(targetId, `⭐ **Bonus EXP dari Admin!**\nAdmin telah menambahkan *+${amount} EXP* ke akun Anda.\nTotal EXP Anda saat ini: *${updated.exp} EXP*.`, { parse_mode: 'Markdown' }).catch(() => {});
+});
+
+// 10a2. /setexp <user_id> <jumlah>
+adminComposer.command('setexp', async ctx => {
+  const parts = ctx.match?.trim().split(/\s+/);
+  if (!parts || parts.length < 2) {
+    await ctx.reply('ℹ️ Format salah. Gunakan: `/setexp <user_id> <jumlah>`', { parse_mode: 'Markdown' });
+    return;
+  }
+
+  const targetId = parseInt(parts[0], 10);
+  const amount = parseInt(parts[1], 10);
+
+  if (isNaN(targetId) || isNaN(amount) || amount < 0) {
+    await ctx.reply('❌ ID atau jumlah EXP tidak valid.');
+    return;
+  }
+
+  const user = userRepository.getUser(targetId);
+  if (!user) {
+    await ctx.reply('❌ User ID tidak ditemukan di database.');
+    return;
+  }
+
+  userRepository.setExp(targetId, amount);
+  await ctx.reply(`✅ EXP user \`${targetId}\` berhasil diatur menjadi *${amount} EXP*.`, { parse_mode: 'Markdown' });
 });
 
 // 10b. /addkoin <user_id> <jumlah>

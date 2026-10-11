@@ -104,7 +104,7 @@ async function fetchRedditPhotos(url: string): Promise<PhotoInfoResult | null> {
     const res = await fetch(cleanUrl, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'STBDownloaderBot/1.0.0 (by /u/bot)'
+        'User-Agent': 'MediaDownloaderBot/1.0.0 (by /u/bot)'
       }
     });
     clearTimeout(timeout);

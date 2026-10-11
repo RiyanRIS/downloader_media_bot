@@ -44,7 +44,7 @@ export function initBackgroundCrons(bot: Bot<any>): void {
 
         if ((isHighTemp || isHighRam) && (now - lastAlertTime > ALERT_COOLDOWN_MS)) {
           lastAlertTime = now;
-          let warningText = `🚨 **PERINGATAN HARDWARE STB!**\n\n`;
+          let warningText = `🚨 **PERINGATAN HARDWARE SERVER!**\n\n`;
 
           if (isHighTemp) {
             warningText += `🔥 **Suhu CPU Kritis:** ${health.cpuTempC}°C (Batas: ${config.thermalAlertTempC}°C)\n`;

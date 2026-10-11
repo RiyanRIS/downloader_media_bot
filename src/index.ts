@@ -10,7 +10,7 @@ import { initFamily100Data } from './games/family100Data.js';
 
 async function bootstrap() {
   console.log('====================================================');
-  console.log('  Multi-Platform Downloader & STB Utility Bot');
+  console.log('  Multi-Platform Downloader & Community Bot');
   console.log(`  OS: ${process.platform} (${process.arch}) | Node: ${process.version}`);
   console.log(`  Storage Temp Dir: ${config.tmpDir}`);
   console.log('====================================================');
@@ -29,7 +29,7 @@ async function bootstrap() {
   } else {
     console.warn(`⚠️ [Perhatian] Binary yt-dlp belum terdeteksi di "${config.ytDlpPath}".`);
     console.warn(`   Di komputer dev, Anda dapat mengunduh yt-dlp.exe atau menginstall via pip: pip install yt-dlp`);
-    console.warn(`   Di server STB Linux Armbian nanti, jalankan: sudo apt install python3-pip && sudo pip install yt-dlp`);
+    console.warn(`   Di server Linux nanti, jalankan: sudo apt install python3-pip && sudo pip install yt-dlp`);
   }
 
   // 3. Bersihkan file sampah di folder tmp saat startup
@@ -56,6 +56,25 @@ async function bootstrap() {
 
   const me = await bot.api.getMe();
   console.log(`🎉 Bot aktif dan terhubung sebagai @${me.username}!`);
+
+  // 7. Daftarkan daftar perintah resmi ke Telegram (Memunculkan tombol Menu di pojok kiri bawah)
+  await bot.api.setMyCommands([
+    { command: 'start', description: 'Mulai bot & info akun' },
+    { command: 'menu', description: 'Menu navigasi bot' },
+    { command: 'catat', description: 'Catat pengeluaran keuangan (AI)' },
+    { command: 'struk', description: 'Scan foto struk belanja otomatis' },
+    { command: 'games', description: 'Arena permainan & mini-games' },
+    { command: 'claim', description: 'Check-in harian bonus +20 EXP' },
+    { command: 'leaderboard', description: 'Papan peringkat pengguna paling aktif' },
+    { command: 'dukung', description: 'Dukung pengembang via QRIS' },
+    { command: 'donatur', description: 'Daftar donatur bulan ini' },
+    { command: 'profile', description: 'Lihat profil EXP & statistik akun' },
+    { command: 'saran', description: 'Request fitur & usulan ide baru' },
+    { command: 'lapor', description: 'Laporkan kendala atau link rusak' },
+    { command: 'help', description: 'Panduan lengkap & bantuan admin' }
+  ]).catch(err => {
+    console.warn('⚠️ Gagal mendaftarkan menu perintah Telegram:', err?.message || err);
+  });
 
   // Graceful Shutdown
   const stopApp = async () => {

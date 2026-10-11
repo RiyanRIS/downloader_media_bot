@@ -75,20 +75,17 @@ gameComposer.command(['games', 'game'], async ctx => {
 
   const menuText =
     `🎮 <b>Arena Permainan & Mini-Games</b>\n\n` +
-    `Halo <b>${escapeHtml(ctx.from?.first_name)}</b>! Kumpulkan koin untuk mendownload media atau menaikkan level EXP.\n\n` +
-    `💰 <b>Saldo Koin:</b> <code>${user.coins}</code> Koin\n` +
-    `⭐ <b>Level & EXP:</b> ${badge.emoji} Level ${badge.level} (${badge.title} - ${user.exp} EXP)\n` +
+    `Halo <b>${escapeHtml(ctx.from?.first_name)}</b>! Mainkan permainan untuk melatih otak, bersenang-senang, dan menaikkan <b>Level EXP Keaktifan</b> Anda!\n\n` +
+    `⭐ <b>Level & EXP:</b> ${badge.emoji} Level ${badge.level} (${badge.title} — <code>${user.exp}</code> EXP)\n` +
     `🏆 <b>Statistik Main:</b> ${user.games_won} menang / ${user.games_played} main (${winRate}% win rate)\n\n` +
-    `<b>Pilihan Permainan:</b>\n` +
-    `• ❌⭕ <b>Tic Tac Toe</b> (/ttt atau /tictactoe) - Duel 3x3 asah taktik vs Bot AI atau tantang teman!\n` +
-    `• 👨‍👩‍👧‍👦 <b>Family 100</b> (/family100 atau /f100) - Survei membuktikan (+2 koin &amp; +1 EXP per jawaban)!\n` +
-    `• 🖼️ <b>Tebak Gambar</b> (/tebakgambar atau /tg) - Hadiah +4 koin (+2 koin jika clue), gagal -5 koin!\n` +
-    `• 🎲 <b>Dadu Keberuntungan</b> (/dice) - Lawan bot lempar dadu fisik!\n` +
-    `• 🎰 <b>Mesin Slot</b> (/slot) - Putar 3 baris reel untuk dapat jackpot!\n` +
-    `• 🧩 <b>Kuis Tebak-Tebakan</b> (/tebak) - Asah otak (+2 koin &amp; +5 EXP)!\n` +
-    `• 🎁 <b>Klaim Harian</b> (/claim) - Bonus +50 koin gratis setiap hari!\n` +
-    `• 🔄 <b>Tukar Koin</b> (/tukar) - Tukar koin game jadi Status VIP 30 Hari!\n` +
-    `• 💖 <b>Dukung Bot</b> (/dukung atau /topup) - Dukung tools ini dengan paket berbayar QRIS!`;
+    `<b>Pilihan Permainan (100% Gratis):</b>\n` +
+    `• ❌⭕ <b>Tic Tac Toe</b> (/ttt atau /tictactoe) — Duel 3x3 asah taktik vs Bot AI atau tantang teman!\n` +
+    `• 👨‍👩‍👧‍👦 <b>Family 100</b> (/family100 atau /f100) — Tebak survei seru (+2 EXP per jawaban)!\n` +
+    `• 🖼️ <b>Tebak Gambar</b> (/tebakgambar atau /tg) — Asah imajinasi tebak gambar (+5 EXP)!\n` +
+    `• 🎲 <b>Dadu Keberuntungan</b> (/dice) — Lempar dadu seru adu angka lawan bot!\n` +
+    `• 🎰 <b>Mesin Slot</b> (/slot) — Putar slot jackpot (Super 777: +25 EXP)!\n` +
+    `• 🧩 <b>Kuis Tebak-Tebakan</b> (/tebak) — Asah logika dan teka-teki lucu (+5 EXP)!\n` +
+    `• 💖 <b>Dukung Bot</b> (/dukung) — Berbagi rezeki & dukung pengembang via QRIS!`;
 
   const keyboard = new InlineKeyboard()
     .text('❌⭕ Tic Tac Toe', 'game:nav:ttt')
@@ -100,11 +97,8 @@ gameComposer.command(['games', 'game'], async ctx => {
     .text('🎰 Putar Slot', 'game:nav:slot')
     .text('🧩 Kuis Pilihan Ganda', 'game:nav:quiz')
     .row()
-    .text('🎁 Klaim Harian', 'game:action:claim')
-    .text('👑 Tukar VIP', 'game:action:exchange')
-    .row()
-    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
-    .text('💖 Beli Paket Dukungan', 'topup:menu')
+    .text('🏆 Papan Peringkat EXP', 'game:action:leaderboard')
+    .text('💖 Dukung Pengembang', 'topup:menu')
     .row()
     .text('📋 Menu Utama', 'start:mainmenu');
 
@@ -112,7 +106,7 @@ gameComposer.command(['games', 'game'], async ctx => {
 });
 
 // -------------------------------------------------------------
-// 2. Cek Saldo Koin & Profil (/koin, /saldo, /dompet)
+// 2. Info Status EXP & Profil (/koin, /saldo, /dompet)
 // -------------------------------------------------------------
 gameComposer.command(['koin', 'saldo', 'dompet'], async ctx => {
   if (!ctx.user) return;
@@ -120,27 +114,25 @@ gameComposer.command(['koin', 'saldo', 'dompet'], async ctx => {
   if (!user) return;
 
   const badge = getLevelBadge(user.exp);
-  const roleBadge = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
+  const roleBadge = user.role === 'vip' ? '💖 Sahabat Dermawan' : user.role === 'admin' ? '👑 Admin' : '👤 Pengguna Aktif';
   const winRate = user.games_played > 0 ? ((user.games_won / user.games_played) * 100).toFixed(1) : '0';
 
   const text =
-    `👛 <b>Dompet & Statistik Pemain</b>\n\n` +
+    `🎖️ <b>Profil Keaktifan & Statistik</b>\n\n` +
     `• <b>ID Pengguna:</b> <code>${user.telegram_id}</code>\n` +
     `• <b>Status Akun:</b> ${roleBadge}\n` +
-    `• <b>Saldo Koin:</b> 💰 <b>${user.coins} Koin</b>\n` +
-    `• <b>Peringkat Level:</b> ${badge.emoji} Level ${badge.level} (${badge.title} - ${user.exp} EXP)\n` +
+    `• <b>Peringkat Keaktifan:</b> ${badge.emoji} Level ${badge.level} (${badge.title})\n` +
+    `• <b>Total EXP:</b> ⭐ <b>${user.exp} EXP</b>\n` +
     `• <b>Total Permainan:</b> ${user.games_played} kali\n` +
     `• <b>Kemenangan:</b> ${user.games_won} kali (${winRate}% win rate)\n\n` +
-    `💡 <i>Gunakan koin untuk mendownload video/lagu, bermain game, atau kumpulkan 1.500 koin untuk ditukar menjadi status VIP (/tukar).</i>`;
+    `✨ <i>Catatan: Sistem koin telah ditiadakan! Seluruh fitur unduhan media &amp; pencatatan keuangan kini 100% gratis digunakan. Kumpulkan EXP untuk menaikkan peringkat keaktifan Anda di papan leaderboard!</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🎁 Klaim Koin Gratis', 'game:action:claim')
-    .text('💖 Beli Paket Dukungan', 'topup:menu')
+    .text('🎁 Check-in Harian (+20 EXP)', 'game:action:claim')
+    .text('🏆 Papan Peringkat EXP', 'game:action:leaderboard')
     .row()
-    .text('👑 Tukar VIP', 'game:action:exchange')
-    .text('🏆 Papan Peringkat', 'game:action:leaderboard')
-    .row()
-    .text('🎮 Buka Menu Game', 'game:nav:menu');
+    .text('🎮 Arena Games', 'game:nav:menu')
+    .text('💖 Dukung Pengembang', 'topup:menu');
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 });
@@ -150,14 +142,14 @@ gameComposer.command(['koin', 'saldo', 'dompet'], async ctx => {
 // -------------------------------------------------------------
 gameComposer.command(['claim', 'daily'], async ctx => {
   if (!ctx.user) return;
-  const res = userRepository.claimDailyBonus(ctx.user.telegram_id, 50);
+  const res = userRepository.claimDailyBonus(ctx.user.telegram_id, 20);
 
   if (res.success) {
     const text =
-      `🎁 <b>Klaim Harian Berhasil!</b>\n\n` +
-      `Anda mendapatkan <b>+50 Koin</b> dan <b>+10 EXP</b> hari ini!\n` +
-      `Saldo Koin Anda sekarang: <b>${res.currentCoins} Koin</b>.\n\n` +
-      `<i>Kembali lagi besok untuk mengklaim bonus berikutnya!</i>`;
+      `🎁 <b>Check-in Harian Berhasil!</b>\n\n` +
+      `Anda mendapatkan <b>+20 EXP</b> keaktifan hari ini!\n` +
+      `Total EXP Anda sekarang: ⭐ <b>${res.currentExp} EXP</b>.\n\n` +
+      `<i>Kembali lagi besok untuk mengklaim EXP berikutnya!</i>`;
 
     const keyboard = new InlineKeyboard()
       .text('🎲 Main Dadu', 'game:nav:dice')
@@ -165,7 +157,7 @@ gameComposer.command(['claim', 'daily'], async ctx => {
 
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
   } else {
-    await ctx.reply(`⏳ <b>Info Klaim:</b>\n${res.message}`, { parse_mode: 'HTML' });
+    await ctx.reply(`⏳ <b>Info Check-in:</b>\n${res.message}`, { parse_mode: 'HTML' });
   }
 });
 
@@ -175,7 +167,7 @@ const activeRollers = new Set<number>();
 // -------------------------------------------------------------
 // Helper: Logika Permainan Dadu (Digunakan oleh Command & Tombol Repeat)
 // -------------------------------------------------------------
-async function playDiceGame(ctx: MyContext, userId: number, betAmount: number) {
+async function playDiceGame(ctx: MyContext, userId: number, _betAmount?: number) {
   const chatId = ctx.chat?.id || ctx.from?.id;
   if (!chatId) return;
 
@@ -191,37 +183,9 @@ async function playDiceGame(ctx: MyContext, userId: number, betAmount: number) {
   const user = userRepository.getUser(userId);
   if (!user) return;
 
-  if (isNaN(betAmount) || betAmount < 5) {
-    await ctx.api.sendMessage(
-      chatId,
-      `🎲 <b>Format Game Dadu:</b>\n` +
-      `Gunakan: <code>/dice &lt;jumlah_taruhan&gt;</code>\n` +
-      `Contoh: <code>/dice 20</code> (Minimal 5 koin).\n\n` +
-      `Saldo Anda saat ini: <b>${user.coins} Koin</b>.`,
-      { parse_mode: 'HTML' }
-    );
-    return;
-  }
-
-  if (user.coins < betAmount) {
-    await ctx.api.sendMessage(
-      chatId,
-      `⚠️ <b>Koin Tidak Cukup!</b>\nSaldo koin Anda: <b>${user.coins}</b>. Taruhan dibutuhkan: <b>${betAmount}</b>.\nKetik /claim untuk klaim koin gratis!`,
-      { parse_mode: 'HTML' }
-    );
-    return;
-  }
-
   activeRollers.add(userId);
   try {
-    // Potong koin taruhan di awal secara aman
-    const deducted = userRepository.deductCoins(userId, betAmount);
-    if (!deducted) {
-      await ctx.api.sendMessage(chatId, '⚠️ Terjadi kesalahan saat memotong koin. Saldo tidak mencukupi.');
-      return;
-    }
-
-    await ctx.api.sendMessage(chatId, `🎲 <b>Giliran Anda melempar dadu (${betAmount} Koin)...</b>`, { parse_mode: 'HTML' });
+    await ctx.api.sendMessage(chatId, `🎲 <b>Giliran Anda melempar dadu...</b>`, { parse_mode: 'HTML' });
     const userDice = await ctx.api.sendDice(chatId, '🎲');
     const userVal = userDice.dice.value;
 
@@ -237,41 +201,40 @@ async function playDiceGame(ctx: MyContext, userId: number, betAmount: number) {
 
     let resultMsg = '';
     const keyboard = new InlineKeyboard()
-      .text(`🎲 Lempar Lagi (${betAmount} Koin)`, `game:dice:repeat:${betAmount}`)
+      .text('🎲 Lempar Lagi', 'game:dice:repeat')
       .row()
       .text('🎮 Menu Games', 'game:nav:menu');
 
     if (userVal > botVal) {
-      // Menang (2x lipat taruhan)
-      const prize = betAmount * 2;
-      userRepository.recordGameResult(userId, true, prize, 15);
+      // Menang (+5 EXP)
+      userRepository.recordGameResult(userId, true, 0, 5);
       const updated = userRepository.getUser(userId)!;
       resultMsg =
         `🎉 <b>SELAMAT ANDA MENANG!</b> 🎉\n\n` +
         `🎲 Skor Anda: <b>${userVal}</b>\n` +
         `🤖 Skor Bot: <b>${botVal}</b>\n\n` +
-        `Hadiah: <b>+${prize} Koin</b> & <b>+15 EXP</b>!\n` +
-        `Saldo Koin Anda: <b>${updated.coins} Koin</b>.`;
+        `Hadiah: ⭐ <b>+5 EXP</b> keaktifan!\n` +
+        `Total EXP Anda: <b>${updated.exp} EXP</b>.`;
     } else if (userVal === botVal) {
-      // Seri (kembalikan modal taruhan)
-      userRepository.addCoins(userId, betAmount, 5);
+      // Seri (+2 EXP)
+      userRepository.recordGameResult(userId, false, 0, 2);
       const updated = userRepository.getUser(userId)!;
       resultMsg =
         `🤝 <b>HASILNYA SERI!</b>\n\n` +
         `🎲 Skor Anda: <b>${userVal}</b>\n` +
         `🤖 Skor Bot: <b>${botVal}</b>\n\n` +
-        `Koin taruhan sebesar <b>${betAmount} Koin</b> dikembalikan ke saldo Anda (+5 EXP).\n` +
-        `Saldo Koin: <b>${updated.coins} Koin</b>.`;
+        `Hadiah: ⭐ <b>+2 EXP</b> keaktifan!\n` +
+        `Total EXP: <b>${updated.exp} EXP</b>.`;
     } else {
-      // Kalah
-      userRepository.recordGameResult(userId, false, 0, 3);
+      // Kalah (+1 EXP)
+      userRepository.recordGameResult(userId, false, 0, 1);
       const updated = userRepository.getUser(userId)!;
       resultMsg =
         `😢 <b>KALI INI BOT LEBIH UNTUNG!</b>\n\n` +
         `🎲 Skor Anda: <b>${userVal}</b>\n` +
         `🤖 Skor Bot: <b>${botVal}</b>\n\n` +
-        `Anda kehilangan <b>${betAmount} Koin</b> (+3 EXP penghibur).\n` +
-        `Sisa Koin Anda: <b>${updated.coins} Koin</b>. Jangan menyerah, coba lagi!`;
+        `Hadiah: ⭐ <b>+1 EXP</b> hiburan.\n` +
+        `Total EXP Anda: <b>${updated.exp} EXP</b>. Ayo lempar lagi!`;
     }
 
     await ctx.api.sendMessage(chatId, resultMsg, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -283,7 +246,7 @@ async function playDiceGame(ctx: MyContext, userId: number, betAmount: number) {
 // -------------------------------------------------------------
 // Helper: Logika Permainan Mesin Slot (Digunakan oleh Command & Tombol Repeat)
 // -------------------------------------------------------------
-async function playSlotGame(ctx: MyContext, userId: number, betAmount: number) {
+async function playSlotGame(ctx: MyContext, userId: number, _betAmount?: number) {
   const chatId = ctx.chat?.id || ctx.from?.id;
   if (!chatId) return;
 
@@ -299,98 +262,51 @@ async function playSlotGame(ctx: MyContext, userId: number, betAmount: number) {
   const user = userRepository.getUser(userId);
   if (!user) return;
 
-  if (isNaN(betAmount) || betAmount < 5) {
-    await ctx.api.sendMessage(
-      chatId,
-      `🎰 <b>Format Game Mesin Slot:</b>\n` +
-      `Gunakan: <code>/slot &lt;jumlah_taruhan&gt;</code>\n` +
-      `Contoh: <code>/slot 20</code> (Minimal 5 koin).\n\n` +
-      `🏆 <b>Multiplier Hadiah:</b>\n` +
-      `• Tiga Angka 7 (Jackpot Utama): <b>10x Taruhan</b>\n` +
-      `• Tiga Simbol Kembar (BAR / Buah): <b>4x Taruhan</b>\n` +
-      `• Dua Simbol Kembar: <b>1.5x Taruhan</b>\n\n` +
-      `Saldo Koin Anda: <b>${user.coins} Koin</b>.`,
-      { parse_mode: 'HTML' }
-    );
-    return;
-  }
-
-  if (user.coins < betAmount) {
-    await ctx.api.sendMessage(
-      chatId,
-      `⚠️ <b>Koin Tidak Cukup!</b>\nSaldo koin Anda: <b>${user.coins}</b>. Taruhan: <b>${betAmount}</b>.`,
-      { parse_mode: 'HTML' }
-    );
-    return;
-  }
-
   activeRollers.add(userId);
   try {
-    const deducted = userRepository.deductCoins(userId, betAmount);
-    if (!deducted) {
-      await ctx.api.sendMessage(chatId, '⚠️ Gagal memotong koin. Saldo Anda tidak mencukupi.');
-      return;
-    }
-
-    await ctx.api.sendMessage(chatId, `🎰 <b>Memutar Mesin Slot (${betAmount} Koin)...</b>`, { parse_mode: 'HTML' });
+    await ctx.api.sendMessage(chatId, `🎰 <b>Memutar Mesin Slot...</b>`, { parse_mode: 'HTML' });
     const slotDice = await ctx.api.sendDice(chatId, '🎰');
     const slotVal = slotDice.dice.value;
 
     // Tunggu animasi reel slot selesai berputar (~2.5 detik)
     await sleep(2500);
 
-    let prizeMultiplier = 0;
-    let statusText = '';
+    let expGain = 1;
+    let statusText = '✨ <b>Putaran Selesai!</b>';
 
     if (slotVal === 64) {
-      // Nilai 64 di Telegram Slot API adalah "777" (Jackpot Tertinggi)
-      prizeMultiplier = 10;
+      // 777
+      expGain = 25;
       statusText = '🔥 <b>SUPER JACKPOT 777!</b> 🔥';
     } else if (slotVal === 1) {
       // Tiga BAR
-      prizeMultiplier = 5;
+      expGain = 15;
       statusText = '💎 <b>JACKPOT TRIPLE BAR!</b> 💎';
     } else if (slotVal === 22 || slotVal === 43) {
-      // Tiga Buah Kembar (Cherry / Lemon)
-      prizeMultiplier = 4;
+      // Tiga Buah Kembar
+      expGain = 10;
       statusText = '🍒 <b>TRIPLE BUAH KEMBAR!</b> 🍒';
     } else if (slotVal % 4 === 0 || slotVal % 7 === 0) {
-      // Kombinasi dua simbol kembar
-      prizeMultiplier = 1.5;
-      statusText = '✨ <b>DUA SIMBOL KEMBAR!</b> ✨';
+      // Dua simbol kembar
+      expGain = 5;
+      statusText = '⭐ <b>DUA SIMBOL KEMBAR!</b> ⭐';
     }
 
-    const isWin = prizeMultiplier > 0;
+    userRepository.recordGameResult(userId, expGain > 1, 0, expGain);
+    const updated = userRepository.getUser(userId)!;
+
     const keyboard = new InlineKeyboard()
-      .text(`🎰 Putar Lagi (${betAmount} Koin)`, `game:slot:repeat:${betAmount}`)
+      .text('🎰 Putar Lagi', 'game:slot:repeat')
       .row()
       .text('🎮 Menu Games', 'game:nav:menu');
 
-    if (isWin) {
-      const totalWon = Math.floor(betAmount * prizeMultiplier);
-      const expGain = prizeMultiplier >= 5 ? 50 : 20;
-      userRepository.recordGameResult(userId, true, totalWon, expGain);
-      const updated = userRepository.getUser(userId)!;
-
-      await ctx.api.sendMessage(
-        chatId,
-        `${statusText}\n\n` +
-        `Anda memenangkan <b>${totalWon} Koin</b> (${prizeMultiplier}x) & <b>+${expGain} EXP</b>!\n` +
-        `Saldo Koin Anda: <b>${updated.coins} Koin</b>.`,
-        { parse_mode: 'HTML', reply_markup: keyboard }
-      );
-    } else {
-      userRepository.recordGameResult(userId, false, 0, 3);
-      const updated = userRepository.getUser(userId)!;
-
-      await ctx.api.sendMessage(
-        chatId,
-        `😢 <b>Belum Beruntung!</b>\n\n` +
-        `Kombinasi simbol belum cocok. Anda kehilangan <b>${betAmount} Koin</b> (+3 EXP).\n` +
-        `Sisa Koin Anda: <b>${updated.coins} Koin</b>. Coba putar sekali lagi!`,
-        { parse_mode: 'HTML', reply_markup: keyboard }
-      );
-    }
+    await ctx.api.sendMessage(
+      chatId,
+      `${statusText}\n\n` +
+      `Hadiah: ⭐ <b>+${expGain} EXP</b> keaktifan!\n` +
+      `Total EXP Anda: <b>${updated.exp} EXP</b>.`,
+      { parse_mode: 'HTML', reply_markup: keyboard }
+    );
   } finally {
     activeRollers.delete(userId);
   }
@@ -401,9 +317,7 @@ async function playSlotGame(ctx: MyContext, userId: number, betAmount: number) {
 // -------------------------------------------------------------
 gameComposer.command(['dice', 'dadu'], async ctx => {
   if (!ctx.user) return;
-  const args = ctx.message?.text?.split(/\s+/);
-  const betAmount = parseInt(args?.[1] || '10', 10);
-  await playDiceGame(ctx, ctx.user.telegram_id, betAmount);
+  await playDiceGame(ctx, ctx.user.telegram_id);
 });
 
 // -------------------------------------------------------------
@@ -411,9 +325,7 @@ gameComposer.command(['dice', 'dadu'], async ctx => {
 // -------------------------------------------------------------
 gameComposer.command(['slot', 'jackpot'], async ctx => {
   if (!ctx.user) return;
-  const args = ctx.message?.text?.split(/\s+/);
-  const betAmount = parseInt(args?.[1] || '10', 10);
-  await playSlotGame(ctx, ctx.user.telegram_id, betAmount);
+  await playSlotGame(ctx, ctx.user.telegram_id);
 });
 
 // -------------------------------------------------------------
@@ -435,8 +347,7 @@ gameComposer.command('nyerah', async ctx => {
   clearTimeout(session.timeoutTimer);
   activeTebakGambar.delete(chatId);
 
-  userRepository.recordGameResult(session.userId, false, -5, 0);
-  const user = userRepository.getUser(session.userId);
+  userRepository.recordGameResult(session.userId, false, 0, 0);
 
   const surrenderKeyboard = new InlineKeyboard()
     .text('🖼️ Coba Soal Lain', 'game:nav:tebakgambar')
@@ -447,7 +358,6 @@ gameComposer.command('nyerah', async ctx => {
     `🏳️ <b>Anda Menyerah!</b>\n\n` +
     `👉 Jawaban yang benar: <b>${session.item.jawaban}</b>\n` +
     `📝 Deskripsi: <i>${session.item.deskripsi}</i>\n\n` +
-    `❌ Saldo koin dipotong <b>5 Koin</b> karena menyerah (Sisa: ${user?.coins ?? 0} Koin).\n` +
     `Yuk coba tebak gambar yang lain!`,
     { parse_mode: 'HTML', reply_markup: surrenderKeyboard }
   );
@@ -485,8 +395,7 @@ async function startTebakGambarGame(ctx: MyContext, chatId: number, userId: numb
     `Perhatikan gambar di atas dan tebak maknanya!\n\n` +
     `💡 <b>Petunjuk Huruf:</b>\n<code>${initialClue}</code>\n` +
     `📝 <b>Format:</b> ${wordCount} kata (${charCount} huruf)\n\n` +
-    `🎁 <b>Hadiah:</b> <b>+4 Koin</b> &amp; <b>+2 EXP</b> (atau <b>+2 Koin</b> &amp; <b>+1 EXP</b> jika butuh clue)\n` +
-    `⚠️ <i>Gagal / Menyerah: -5 Koin!</i>\n` +
+    `🎁 <b>Hadiah:</b> ⭐ <b>+5 EXP</b> (atau <b>+3 EXP</b> jika menggunakan clue)\n` +
     `⏱️ <b>Waktu:</b> 30 detik\n\n` +
     `<i>Ketik jawaban Anda langsung di obrolan ini!</i>`;
 
@@ -510,8 +419,7 @@ async function startTebakGambarGame(ctx: MyContext, chatId: number, userId: numb
     const cur = activeTebakGambar.get(chatId);
     if (cur && cur.item.index === item.index) {
       activeTebakGambar.delete(chatId);
-      userRepository.recordGameResult(cur.userId, false, -5, 0);
-      const curUser = userRepository.getUser(cur.userId);
+      userRepository.recordGameResult(cur.userId, false, 0, 0);
       const timeoutKeyboard = new InlineKeyboard()
         .text('🖼️ Main Lagi', 'game:nav:tebakgambar')
         .row()
@@ -522,7 +430,6 @@ async function startTebakGambarGame(ctx: MyContext, chatId: number, userId: numb
         `⏰ <b>WAKTU TEBAK GAMBAR HABIS (30 Detik)!</b>\n\n` +
         `👉 Jawaban yang benar: <b>${item.jawaban}</b>\n` +
         `📝 Deskripsi: <i>${item.deskripsi}</i>\n\n` +
-        `❌ Karena tidak berhasil menjawab, saldo koin dipotong <b>5 Koin</b> (Sisa: ${curUser?.coins ?? 0} Koin).\n` +
         `Jangan patah semangat, ayo coba soal berikutnya!`,
         { parse_mode: 'HTML', reply_markup: timeoutKeyboard }
       ).catch(() => {});
@@ -585,12 +492,11 @@ gameComposer.command(['nyerah_f100', 'nyerahf100'], async ctx => {
     .text('🎮 Menu Games', 'game:nav:menu');
 
   if (answeredCount === 0) {
-    userRepository.recordGameResult(session.starterUserId, false, -10, 0);
-    const user = userRepository.getUser(session.starterUserId);
+    userRepository.recordGameResult(session.starterUserId, false, 0, 0);
     await ctx.reply(
       `🏳️ <b>Menyerah di Game Family 100!</b>\n\n` +
       `❓ <i>"${escapeHtml(session.soal)}"</i>\n\n` +
-      `❌ Karena belum ada satupun jawaban yang ditebak, saldo pembuat game (<b>${session.starterName}</b>) dipotong <b>10 Koin</b> (Sisa: ${user?.coins ?? 0} Koin)!\n\n` +
+      `Belum ada jawaban yang ditebak.\n\n` +
       `👉 <b>Berikut semua jawabannya:</b>\n${fullBoard}`,
       { parse_mode: 'HTML', reply_markup: endKeyboard }
     );
@@ -649,14 +555,12 @@ async function startFamily100Game(ctx: MyContext, chatId: number, userId: number
       .text('🎮 Menu Games', 'game:nav:menu');
 
     if (answeredCount === 0) {
-      userRepository.recordGameResult(cur.starterUserId, false, -10, 0);
-      const user = userRepository.getUser(cur.starterUserId);
+      userRepository.recordGameResult(cur.starterUserId, false, 0, 0);
       await ctx.api.sendMessage(
         chatId,
         `⏰ <b>WAKTU FAMILY 100 HABIS (60 Detik)!</b>\n\n` +
         `❓ <i>"${escapeHtml(cur.soal)}"</i>\n\n` +
-        `❌ <b>Tidak ada satupun jawaban yang berhasil ditebak!</b>\n` +
-        `💸 Saldo pembuat game (<b>${cur.starterName}</b>) dipotong <b>10 Koin</b> (Sisa: ${user?.coins ?? 0} Koin)!\n\n` +
+        `❌ <b>Tidak ada satupun jawaban yang berhasil ditebak!</b>\n\n` +
         `👉 <b>Berikut survei lengkapnya:</b>\n${fullBoard}`,
         { parse_mode: 'HTML', reply_markup: endKeyboard }
       ).catch(() => {});
@@ -691,8 +595,7 @@ async function startFamily100Game(ctx: MyContext, chatId: number, userId: number
     `<i>"${escapeHtml(item.soal)}"</i>\n\n` +
     `${initialBoard}\n` +
     `⏱️ <b>Waktu:</b> 60 detik\n` +
-    `🎁 <b>Hadiah:</b> <b>+2 Koin</b> &amp; <b>+1 EXP</b> per jawaban benar!\n` +
-    `⚠️ <i>Jika gagal menjawab sama sekali, pembuat game minus 10 koin!</i>\n\n` +
+    `🎁 <b>Hadiah:</b> ⭐ <b>+2 EXP</b> per jawaban benar!\n\n` +
     `<i>Ketik jawaban survei Anda langsung di obrolan ini!</i>`;
 
   const keyboard = new InlineKeyboard()
@@ -729,8 +632,7 @@ async function sendNewQuiz(ctx: MyContext, userId: number) {
     `B. ${quiz.options[1]}\n` +
     `C. ${quiz.options[2]}\n` +
     `D. ${quiz.options[3]}\n\n` +
-    `🎁 <i>Hadiah: +2 Koin &amp; +1 EXP jika benar!</i>\n` +
-    `⚠️ <i>Salah / soal lain (menyerah): -5 Koin!</i>`;
+    `🎁 <i>Hadiah: ⭐ <b>+5 EXP</b> jika benar!</i>`;
 
   const keyboard = new InlineKeyboard()
     .text(`A. ${quiz.options[0].slice(0, 18)}`, `game:quiz:${userId}:${quiz.id}:0`)
@@ -739,15 +641,15 @@ async function sendNewQuiz(ctx: MyContext, userId: number) {
     .text(`C. ${quiz.options[2].slice(0, 18)}`, `game:quiz:${userId}:${quiz.id}:2`)
     .text(`D. ${quiz.options[3].slice(0, 18)}`, `game:quiz:${userId}:${quiz.id}:3`)
     .row()
-    .text('🔄 Soal Lain (Menyerah)', `game:quiz:surrender:${userId}`)
+    .text('🔄 Soal Lain', `game:quiz:surrender:${userId}`)
     .text('🎮 Menu Games', 'game:nav:menu');
 
   await ctx.reply(quizText, { parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 export function renderCoinsLeaderboard(): { text: string; keyboard: InlineKeyboard } {
-  const leaders = userRepository.getCoinsLeaderboard(10);
-  let text = `🏆 <b>PAPAN PERINGKAT: 10 PEMAIN TERKAYA (KOIN)</b> 🪙\n\n`;
+  const leaders = userRepository.getExpLeaderboard(10);
+  let text = `🏆 <b>PAPAN PERINGKAT: 10 PENGGUNA PALING AKTIF</b> 🎖️\n\n`;
 
   if (leaders.length === 0) {
     text += `<i>Belum ada pemain yang terdaftar. Mulai main sekarang!</i>`;
@@ -756,24 +658,22 @@ export function renderCoinsLeaderboard(): { text: string; keyboard: InlineKeyboa
       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `<b>${idx + 1}.</b>`;
       const name = player.username ? `@${escapeHtml(player.username)}` : `User ${player.telegram_id}`;
       const badge = getLevelBadge(player.exp);
-      text += `${medal} ${name} — <b>${player.coins} Koin</b> (${badge.emoji} Lv.${badge.level} ${badge.title}, ${player.games_won}x win)\n`;
+      text += `${medal} ${name} — ⭐ <b>${player.exp} EXP</b> (${badge.emoji} Lv.${badge.level} ${badge.title})\n`;
     });
   }
 
-  text += `\n💡 <i>Kumpulkan koin dari mini-games, klaim harian, atau dukung kami via /dukung (/topup)!</i>`;
+  text += `\n💡 <i>EXP didapatkan dari unduh media, catat pengeluaran, check-in harian, dan mini-games!</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('⭐ Lihat Top EXP / Level', 'game:leaderboard:exp')
-    .row()
     .text('🎮 Main Game', 'game:nav:menu')
-    .text('💖 Beli Paket Dukungan', 'topup:menu');
+    .text('💖 Dukung Pengembang', 'topup:menu');
 
   return { text, keyboard };
 }
 
 export function renderExpLeaderboard(): { text: string; keyboard: InlineKeyboard } {
   const leaders = userRepository.getExpLeaderboard(10);
-  let text = `⭐ <b>PAPAN PERINGKAT: 10 MASTER EXP & LEVEL</b> 🎖️\n\n`;
+  let text = `⭐ <b>PAPAN PERINGKAT: 10 MASTER EXP & KEAKTIFAN</b> 🎖️\n\n`;
 
   if (leaders.length === 0) {
     text += `<i>Belum ada pemain yang terdaftar. Mulai main sekarang!</i>`;
@@ -782,60 +682,43 @@ export function renderExpLeaderboard(): { text: string; keyboard: InlineKeyboard
       const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `<b>${idx + 1}.</b>`;
       const name = player.username ? `@${escapeHtml(player.username)}` : `User ${player.telegram_id}`;
       const badge = getLevelBadge(player.exp);
-      text += `${medal} ${name} — <b>${player.exp} EXP</b> (${badge.emoji} Lv.${badge.level} ${badge.title}, 💰 ${player.coins} koin)\n`;
+      text += `${medal} ${name} — ⭐ <b>${player.exp} EXP</b> (${badge.emoji} Lv.${badge.level} ${badge.title}, ${player.games_won}x win)\n`;
     });
   }
 
-  text += `\n💡 <i>EXP didapatkan dari setiap kemenangan game, klaim harian, dan mengunduh media!</i>`;
+  text += `\n💡 <i>EXP didapatkan dari aktivitas bot: download media (+2 EXP), catat keuangan (+3/+5 EXP), check-in harian (+20 EXP), dan game!</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🪙 Lihat Top Koin (Terkaya)', 'game:leaderboard:coins')
-    .row()
     .text('🎮 Main Game', 'game:nav:menu')
-    .text('💖 Beli Paket Dukungan', 'topup:menu');
+    .text('💖 Dukung Pengembang', 'topup:menu');
 
   return { text, keyboard };
 }
 
 // -------------------------------------------------------------
-// 7. Papan Peringkat (/leaderboard, /topgame, /topkoin, /topexp)
+// 7. Papan Peringkat (/leaderboard, /topgame, /topexp)
 // -------------------------------------------------------------
-gameComposer.command(['leaderboard', 'topgame', 'topkoin', 'topcoin'], async ctx => {
-  const { text, keyboard } = renderCoinsLeaderboard();
-  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-});
-
-gameComposer.command(['topexp', 'toplevel'], async ctx => {
+gameComposer.command(['leaderboard', 'topgame', 'topkoin', 'topcoin', 'topexp', 'toplevel'], async ctx => {
   const { text, keyboard } = renderExpLeaderboard();
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
 });
 
 // -------------------------------------------------------------
-// 8. Tukar Koin Game ke Status VIP (/tukar, /exchange)
+// 8. Info Status Layanan 100% Gratis (/tukar, /exchange)
 // -------------------------------------------------------------
 gameComposer.command(['tukar', 'exchange'], async ctx => {
-  if (!ctx.user) return;
-  const user = userRepository.getUser(ctx.user.telegram_id);
-  if (!user) return;
-
-  const roleText = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
-
   const text =
-    `🔄 <b>TUKAR KOIN GAME KE STATUS VIP</b>\n\n` +
-    `Rajin main game? Koin kemenangan Anda bisa ditukarkan menjadi <b>Status Akun VIP</b> tanpa perlu bayar sepeser pun!\n\n` +
-    `💰 <b>Saldo Koin Anda:</b> <code>${user.coins}</code> Koin\n` +
-    `🔰 <b>Status Saat Ini:</b> ${roleText}\n\n` +
-    `<b>Pilihan Penukaran VIP:</b>\n` +
-    `• 🌟 <b>VIP 7 Hari:</b> 500 Koin (Bebas download tanpa potong koin!)\n` +
-    `• 👑 <b>VIP 30 Hari:</b> 1.500 Koin (Bebas download sepuasnya 1 bulan full!)\n\n` +
-    `<i>Keuntungan VIP: Seluruh unduhan media YouTube, TikTok, IG, FB, dll. GRATIS 0 koin!</i>`;
+    `ℹ️ <b>SEMUA FITUR 100% GRATIS SELAMANYA!</b>\n\n` +
+    `Bot ini telah beralih sepenuhnya ke model <b>komunitas sukarela</b>. Anda <b>TIDAK PERLU</b> membeli koin ataupun menukar kuota untuk menggunakan bot!\n\n` +
+    `• 📥 <b>Unduh Media:</b> TikTok, YouTube, IG, FB, dll. tanpa batas.\n` +
+    `• 💰 <b>Catat Keuangan & Scan Struk:</b> Bebas pakai kapan saja.\n` +
+    `• ⭐ <b>Sistem EXP:</b> Menunjukkan keaktifan Anda di papan /leaderboard.\n\n` +
+    `Jika Anda merasa bot ini bermanfaat dan ingin berpartisipasi menjaga operasional server, Anda dapat berdonasi secara sukarela via QRIS melalui perintah /dukung.`;
 
   const keyboard = new InlineKeyboard()
-    .text('🌟 Tukar VIP 7 Hari (500 Koin)', 'game:exchange:vip:7:500')
+    .text('💖 Dukung Pengembang', 'topup:menu')
     .row()
-    .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
-    .row()
-    .text('💖 Beli Paket Dukungan', 'topup:menu')
+    .text('⭐ Lihat Leaderboard', 'game:leaderboard:exp')
     .text('🎮 Arena Games', 'game:nav:menu');
 
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
@@ -863,12 +746,11 @@ gameComposer.on('message:text', async (ctx, next) => {
         .text('🎮 Menu Games', 'game:nav:menu');
 
       if (answeredCount === 0) {
-        userRepository.recordGameResult(f100Session.starterUserId, false, -10, 0);
-        const user = userRepository.getUser(f100Session.starterUserId);
+        userRepository.recordGameResult(f100Session.starterUserId, false, 0, 0);
         await ctx.reply(
           `🏳️ <b>Menyerah di Game Family 100!</b>\n\n` +
           `❓ <i>"${escapeHtml(f100Session.soal)}"</i>\n\n` +
-          `❌ Karena belum ada satupun jawaban yang ditebak, saldo pembuat game (<b>${f100Session.starterName}</b>) dipotong <b>10 Koin</b> (Sisa: ${user?.coins ?? 0} Koin)!\n\n` +
+          `Belum ada jawaban yang ditebak.\n\n` +
           `👉 <b>Berikut semua jawabannya:</b>\n${fullBoard}`,
           { parse_mode: 'HTML', reply_markup: endKeyboard }
         );
@@ -893,8 +775,8 @@ gameComposer.on('message:text', async (ctx, next) => {
         const winnerName = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name);
 
         matched.answeredBy = winnerName;
-        userRepository.addCoins(winnerId, 2, 1);
-        userRepository.recordGameResult(winnerId, true, 2, 1);
+        userRepository.addExp(winnerId, 2);
+        userRepository.recordGameResult(winnerId, true, 0, 2);
 
         const remaining = f100Session.answers.filter(a => !a.answeredBy);
         if (remaining.length === 0) {
@@ -912,14 +794,14 @@ gameComposer.on('message:text', async (ctx, next) => {
             `🎉 <b>SURVEI MEMBUKTIKAN! SEMUA JAWABAN BERHASIL DITEBAK!</b> 🎉\n\n` +
             `❓ <i>"${escapeHtml(f100Session.soal)}"</i>\n\n` +
             `${fullBoard}\n` +
-            `Poin <b>+2 Koin</b> &amp; <b>+1 EXP</b> telah diberikan per tebakan benar. Kerja sama yang luar biasa! 🏆`,
+            `Poin ⭐ <b>+2 EXP</b> telah diberikan per tebakan benar. Kerja sama yang luar biasa! 🏆`,
             { parse_mode: 'HTML', reply_markup: winKeyboard }
           );
         } else {
           const currentBoard = renderFamily100Board(f100Session);
           await ctx.reply(
             `🎯 <b>TEBAKAN BENAR!</b>\n` +
-            `👤 <b>${winnerName}</b> berhasil menebak: <b>${escapeHtml(matched.raw)}</b> (+2 Koin, +1 EXP)!\n\n` +
+            `👤 <b>${winnerName}</b> berhasil menebak: <b>${escapeHtml(matched.raw)}</b> (⭐ +2 EXP)!\n\n` +
             `${currentBoard}\n` +
             `<i>Sisa ${remaining.length} jawaban lagi! Ayo tebak sebelum 60 detik habis!</i>`,
             { parse_mode: 'HTML' }
@@ -942,8 +824,7 @@ gameComposer.on('message:text', async (ctx, next) => {
       clearTimeout(session.timeoutTimer);
       activeTebakGambar.delete(chatId);
 
-      userRepository.recordGameResult(session.userId, false, -5, 0);
-      const user = userRepository.getUser(session.userId);
+      userRepository.recordGameResult(session.userId, false, 0, 0);
 
       const surrenderKeyboard = new InlineKeyboard()
         .text('🖼️ Coba Soal Lain', 'game:nav:tebakgambar')
@@ -954,7 +835,6 @@ gameComposer.on('message:text', async (ctx, next) => {
         `🏳️ <b>Anda Menyerah!</b>\n\n` +
         `👉 Jawaban yang benar: <b>${session.item.jawaban}</b>\n` +
         `📝 Deskripsi: <i>${session.item.deskripsi}</i>\n\n` +
-        `❌ Saldo koin dipotong <b>5 Koin</b> karena menyerah (Sisa: ${user?.coins ?? 0} Koin).\n` +
         `Yuk coba tebak gambar yang lain!`,
         { parse_mode: 'HTML', reply_markup: surrenderKeyboard }
       );
@@ -972,11 +852,10 @@ gameComposer.on('message:text', async (ctx, next) => {
       const winnerId = ctx.from.id;
       const winnerName = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : ctx.from.first_name);
 
-      const coinReward = session.usedClue ? 2 : 4;
-      const expReward = session.usedClue ? 1 : 2;
+      const expReward = session.usedClue ? 3 : 5;
 
-      userRepository.addCoins(winnerId, coinReward, expReward);
-      userRepository.recordGameResult(winnerId, true, coinReward, expReward);
+      userRepository.addExp(winnerId, expReward);
+      userRepository.recordGameResult(winnerId, true, 0, expReward);
       const updated = userRepository.getUser(winnerId)!;
 
       const clueNote = session.usedClue ? ' <i>(dengan bantuan clue)</i>' : '';
@@ -991,8 +870,8 @@ gameComposer.on('message:text', async (ctx, next) => {
         `👤 Penebak: <b>${winnerName}</b>\n` +
         `👉 Jawaban: <b>${session.item.jawaban}</b>\n` +
         `📝 Deskripsi: <i>${session.item.deskripsi}</i>\n\n` +
-        `🎁 Hadiah${clueNote}: <b>+${coinReward} Koin</b> &amp; <b>+${expReward} EXP</b>!\n` +
-        `Saldo Koin Anda: <b>${updated.coins} Koin</b>.`,
+        `🎁 Hadiah${clueNote}: ⭐ <b>+${expReward} EXP</b> keaktifan!\n` +
+        `Total EXP Anda: <b>${updated.exp} EXP</b>.`,
         { parse_mode: 'HTML', reply_markup: winKeyboard }
       );
       return;
@@ -1021,7 +900,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     const level = Math.floor(user.exp / 100) + 1;
     const menuText =
       `🎮 <b>Arena Permainan &amp; Mini-Games</b>\n\n` +
-      `💰 <b>Saldo Koin:</b> <code>${user.coins}</code> Koin | <b>Level:</b> ${level}\n\n` +
+      `⭐ <b>Total EXP:</b> <code>${user.exp}</code> EXP | <b>Level:</b> ${level}\n\n` +
       `Pilih salah satu menu atau game berikut:`;
 
     const keyboard = new InlineKeyboard()
@@ -1034,11 +913,8 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .text('🎰 Putar Slot', 'game:nav:slot')
       .text('🧩 Kuis Pilihan Ganda', 'game:nav:quiz')
       .row()
-      .text('🎁 Klaim Harian', 'game:action:claim')
-      .text('🔄 Tukar Koin', 'game:action:exchange')
-      .row()
-      .text('🏆 Peringkat', 'game:action:leaderboard')
-      .text('💖 Beli Paket Dukungan', 'topup:menu')
+      .text('🏆 Papan Peringkat EXP', 'game:action:leaderboard')
+      .text('💖 Dukung Pengembang', 'topup:menu')
       .row()
       .text('📋 Menu Utama', 'start:mainmenu');
 
@@ -1084,13 +960,12 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .text('🎮 Menu Games', 'game:nav:menu');
 
     if (answeredCount === 0) {
-      userRepository.recordGameResult(session.starterUserId, false, -10, 0);
-      const user = userRepository.getUser(session.starterUserId);
+      userRepository.recordGameResult(session.starterUserId, false, 0, 0);
       await ctx.api.sendMessage(
         targetChatId,
         `🏳️ <b>Menyerah di Game Family 100!</b>\n\n` +
         `❓ <i>"${escapeHtml(session.soal)}"</i>\n\n` +
-        `❌ Karena belum ada satupun jawaban yang ditebak, saldo pembuat game (<b>${session.starterName}</b>) dipotong <b>10 Koin</b> (Sisa: ${user?.coins ?? 0} Koin)!\n\n` +
+        `Belum ada jawaban yang ditebak.\n\n` +
         `👉 <b>Berikut semua jawabannya:</b>\n${fullBoard}`,
         { parse_mode: 'HTML', reply_markup: endKeyboard }
       ).catch(() => {});
@@ -1135,7 +1010,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     await ctx.api.sendMessage(
       targetChatId,
       `💡 <b>Bantuan Clue Tambahan:</b>\n<code>${moreClue}</code>\n\n` +
-      `ℹ️ <i>Hadiah tebakan disesuaikan menjadi <b>+2 Koin</b> &amp; <b>+1 EXP</b> karena menggunakan bantuan clue.</i>`,
+      `ℹ️ <i>Hadiah tebakan disesuaikan menjadi <b>+3 EXP</b> karena menggunakan bantuan clue.</i>`,
       { parse_mode: 'HTML' }
     );
     return;
@@ -1153,8 +1028,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     clearTimeout(session.timeoutTimer);
     activeTebakGambar.delete(targetChatId);
 
-    userRepository.recordGameResult(session.userId, false, -5, 0);
-    const user = userRepository.getUser(session.userId);
+    userRepository.recordGameResult(session.userId, false, 0, 0);
 
     const surrenderKeyboard = new InlineKeyboard()
       .text('🖼️ Coba Soal Lain', 'game:nav:tebakgambar')
@@ -1166,7 +1040,6 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       `🏳️ <b>Menyerah!</b>\n\n` +
       `👉 Jawaban yang benar: <b>${session.item.jawaban}</b>\n` +
       `📝 Deskripsi: <i>${session.item.deskripsi}</i>\n\n` +
-      `❌ Saldo koin dipotong <b>5 Koin</b> karena menyerah (Sisa: ${user?.coins ?? 0} Koin).\n` +
       `Yuk coba tebak gambar yang lain!`,
       { parse_mode: 'HTML', reply_markup: surrenderKeyboard }
     );
@@ -1181,9 +1054,9 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
 
   if (data === 'game:nav:dice') {
     await ctx.reply(
-      `🎲 <b>Cara Bermain Dadu:</b>\n` +
-      `Ketik perintah <code>/dice &lt;jumlah_koin&gt;</code> di obrolan.\nContoh: <code>/dice 15</code>\n\n` +
-      `Jika angka dadu Anda lebih besar dari dadu bot, Anda menang 2x lipat!`,
+      `🎲 <b>Permainan Dadu:</b>\n` +
+      `Ketik <code>/dice</code> atau <code>/dadu</code> untuk bermain.\n\n` +
+      `Jika angka dadu Anda lebih besar dari bot, Anda mendapatkan ⭐ <b>+5 EXP</b> keaktifan!`,
       { parse_mode: 'HTML' }
     );
     return;
@@ -1191,9 +1064,9 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
 
   if (data === 'game:nav:slot') {
     await ctx.reply(
-      `🎰 <b>Cara Bermain Mesin Slot:</b>\n` +
-      `Ketik perintah <code>/slot &lt;jumlah_koin&gt;</code> di obrolan.\nContoh: <code>/slot 20</code>\n\n` +
-      `Dapatkan jackpot 777 untuk perkalian 10x lipat taruhan!`,
+      `🎰 <b>Permainan Mesin Slot:</b>\n` +
+      `Ketik <code>/slot</code> untuk memutar mesin slot.\n\n` +
+      `Dapatkan jackpot 777 untuk bonus ⭐ <b>+25 EXP</b>!`,
       { parse_mode: 'HTML' }
     );
     return;
@@ -1205,31 +1078,21 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
   }
 
   if (data === 'game:action:claim') {
-    const res = userRepository.claimDailyBonus(userId, 50);
+    const res = userRepository.claimDailyBonus(userId, 20);
     if (res.success) {
       await ctx.reply(
-        `🎁 <b>Klaim Berhasil!</b>\nSaldo Koin sekarang: <b>${res.currentCoins} Koin</b> (+10 EXP).`,
+        `🎁 <b>Check-in Harian Berhasil!</b>\n` +
+        `Anda mendapatkan <b>+20 EXP</b> keaktifan hari ini!\n` +
+        `Total EXP Anda sekarang: ⭐ <b>${res.currentExp} EXP</b>.`,
         { parse_mode: 'HTML' }
       );
     } else {
-      await ctx.reply(`⏳ ${res.message}`);
+      await ctx.reply(`⏳ <b>Info Check-in:</b>\n${res.message}`, { parse_mode: 'HTML' });
     }
     return;
   }
 
-  if (data === 'game:action:leaderboard' || data === 'game:leaderboard:coins') {
-    const { text, keyboard } = renderCoinsLeaderboard();
-    if (ctx.callbackQuery?.message) {
-      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
-        await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-      });
-    } else {
-      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-    }
-    return;
-  }
-
-  if (data === 'game:leaderboard:exp') {
+  if (data === 'game:action:leaderboard' || data === 'game:leaderboard:coins' || data === 'game:leaderboard:exp') {
     const { text, keyboard } = renderExpLeaderboard();
     if (ctx.callbackQuery?.message) {
       await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: keyboard }).catch(async () => {
@@ -1241,68 +1104,37 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
     return;
   }
 
-  if (data === 'game:action:exchange') {
-    const user = userRepository.getUser(userId);
-    if (!user) return;
-    const roleText = user.role === 'vip' ? '🌟 VIP Member' : user.role === 'admin' ? '👑 Admin' : '👤 Free User';
-    const text =
-      `🔄 <b>Tukar Koin ke Status VIP</b>\n` +
-      `Saldo Koin: <b>${user.coins} Koin</b> | Status: <b>${roleText}</b>\n\n` +
-      `Pilih paket penukaran VIP:\n` +
-      `• 🌟 <b>VIP 7 Hari:</b> 500 Koin\n` +
-      `• 👑 <b>VIP 30 Hari:</b> 1.500 Koin\n\n` +
-      `<i>Status VIP memberikan keuntungan unduhan GRATIS tanpa potong koin!</i>`;
-    const keyboard = new InlineKeyboard()
-      .text('🌟 Tukar VIP 7 Hari (500 Koin)', 'game:exchange:vip:7:500')
-      .row()
-      .text('👑 Tukar VIP 30 Hari (1.500 Koin)', 'game:exchange:vip:30:1500')
-      .row()
-      .text('💖 Beli Paket Dukungan', 'topup:menu')
-      .text('🎮 Menu Games', 'game:nav:menu');
-
-    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-    return;
-  }
-
-  if (data.startsWith('game:exchange:vip:')) {
-    const parts = data.split(':');
-    const days = parseInt(parts[3], 10);
-    const cost = parseInt(parts[4], 10);
-
-    const result = userRepository.exchangeCoinsForVip(userId, cost, days);
-    if (result.success) {
-      await ctx.reply(result.message, { parse_mode: 'HTML' });
-    } else {
-      await ctx.reply(`⚠️ ${result.message}`, { parse_mode: 'HTML' });
-    }
+  if (data === 'game:action:exchange' || data.startsWith('game:exchange:vip:')) {
+    await ctx.reply(
+      `ℹ️ <b>SEMUA FITUR 100% GRATIS SELAMANYA!</b>\n\n` +
+      `Anda tidak perlu menukarkan koin atau membeli paket apapun untuk mendownload media maupun mencatat keuangan.\n\n` +
+      `Jika Anda ingin berpartisipasi sukarela mendukung operasional bot, silakan gunakan perintah /dukung.`,
+      {
+        parse_mode: 'HTML',
+        reply_markup: new InlineKeyboard()
+          .text('💖 Dukung Pengembang', 'topup:menu')
+          .text('🎮 Menu Games', 'game:nav:menu')
+      }
+    );
     return;
   }
 
   // Handle Repeat Dice / Repeat Slot
-  if (data.startsWith('game:dice:repeat:')) {
-    const bet = parseInt(data.replace('game:dice:repeat:', ''), 10) || 10;
-    await playDiceGame(ctx, userId, bet);
+  if (data.startsWith('game:dice:repeat')) {
+    await playDiceGame(ctx, userId);
     return;
   }
 
-  if (data.startsWith('game:slot:repeat:')) {
-    const bet = parseInt(data.replace('game:slot:repeat:', ''), 10) || 10;
-    await playSlotGame(ctx, userId, bet);
+  if (data.startsWith('game:slot:repeat')) {
+    await playSlotGame(ctx, userId);
     return;
   }
 
   // Handle Penukaran Koin (game:exchange:cost:quota)
   if (data.startsWith('game:exchange:')) {
-    const parts = data.split(':');
-    const cost = parseInt(parts[2], 10);
-    const quota = parseInt(parts[3], 10);
-
-    const result = userRepository.exchangeCoinsForQuota(userId, cost, quota);
-    if (result.success) {
-      await ctx.reply(result.message, { parse_mode: 'Markdown' });
-    } else {
-      await ctx.reply(`⚠️ ${result.message}`);
-    }
+    await ctx.reply(
+      `ℹ️ Seluruh fitur telah 100% gratis tanpa penukaran kuota. Nikmati bot sepuasnya!`
+    );
     return;
   }
 
@@ -1310,7 +1142,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
   if (data.startsWith('game:quiz:')) {
     const parts = data.split(':');
 
-    // 1. Tombol Menyerah / Soal Lain saat kuis aktif (berarti menyerah -> -5 Koin)
+    // 1. Tombol Menyerah / Soal Lain saat kuis aktif (tanpa penalti)
     if (parts[2] === 'surrender' || parts[2] === 'skip') {
       const targetUserId = parseInt(parts[3], 10);
       if (targetUserId !== userId) return;
@@ -1318,8 +1150,7 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       const activeSession = activeQuizzes.get(userId);
       if (activeSession) {
         activeQuizzes.delete(userId);
-        userRepository.recordGameResult(userId, false, -5, 0);
-        const user = userRepository.getUser(userId);
+        userRepository.recordGameResult(userId, false, 0, 0);
         const q = QUIZ_QUESTIONS.find(item => item.id === activeSession.questionId);
         const ansInfo = q 
           ? `\n👉 Jawaban yang benar: <b>${q.options[q.correctIndex]}</b>\n💡 <i>${q.explanation}</i>\n` 
@@ -1327,10 +1158,9 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
 
         await ctx.api.sendMessage(
           ctx.chat?.id || userId,
-          `🏳️ <b>Anda Menyerah pada Soal Tebak-Tebakan!</b>\n` +
+          `ℹ️ <b>Soal Kuis Dilewati</b>\n` +
           ansInfo +
-          `\n❌ Saldo koin dipotong <b>5 Koin</b> karena menyerah (Sisa: ${user?.coins ?? 0} Koin).\n\n` +
-          `Berikut soal baru untuk Anda:`,
+          `\nBerikut soal baru untuk Anda:`,
           { parse_mode: 'HTML' }
         ).catch(() => {});
       }
@@ -1372,28 +1202,26 @@ gameComposer.on('callback_query:data', async (ctx, next) => {
       .text('🎮 Menu Games', 'game:nav:menu');
 
     if (isCorrect) {
-      userRepository.addCoins(userId, 2, 1);
-      userRepository.recordGameResult(userId, true, 2, 1);
+      userRepository.addExp(userId, 5);
+      userRepository.recordGameResult(userId, true, 0, 5);
       const updated = userRepository.getUser(userId)!;
       await ctx.editMessageText(
         `✅ <b>JAWABAN ANDA BENAR!</b>\n\n` +
         `❓ <i>"${question.question}"</i>\n\n` +
         `👉 Jawaban: <b>${question.options[chosenIndex]}</b>\n` +
         `💡 <i>${question.explanation}</i>\n\n` +
-        `🎁 Hadiah: <b>+2 Koin</b> &amp; <b>+1 EXP</b>!\n` +
-        `Saldo Koin Anda: <b>${updated.coins} Koin</b>.`,
+        `🎁 Hadiah: ⭐ <b>+5 EXP</b>!\n` +
+        `Total EXP Anda: <b>${updated.exp} EXP</b>.`,
         { parse_mode: 'HTML', reply_markup: nextKeyboard }
       ).catch(() => {});
     } else {
-      userRepository.recordGameResult(userId, false, -5, 0);
-      const updated = userRepository.getUser(userId)!;
+      userRepository.recordGameResult(userId, false, 0, 0);
       await ctx.editMessageText(
         `❌ <b>YAH, JAWABAN ANDA KURANG TEPAT!</b>\n\n` +
         `❓ <i>"${question.question}"</i>\n\n` +
         `Pilihan Anda: <s>${question.options[chosenIndex]}</s>\n` +
         `👉 Jawaban yang benar: <b>${question.options[question.correctIndex]}</b>\n` +
         `💡 <i>${question.explanation}</i>\n\n` +
-        `❌ Karena salah menebak, saldo koin dipotong <b>5 Koin</b> (Sisa: ${updated.coins} Koin).\n` +
         `Jangan patah semangat, yuk coba soal berikutnya!`,
         { parse_mode: 'HTML', reply_markup: nextKeyboard }
       ).catch(() => {});

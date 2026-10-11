@@ -138,22 +138,22 @@ export async function sendTttMenu(ctx: MyContext) {
   if (!userId) return;
 
   const user = userRepository.getUser(userId);
-  const coins = user ? user.coins : 0;
+  const exp = user ? user.exp : 0;
+  const level = Math.floor(exp / 100) + 1;
 
   const text =
     `❌⭕ <b>TIC TAC TOE (ARENA 3x3)</b>\n\n` +
-    `Selamat datang di arena Tic Tac Toe! Susun 3 simbol sejajar untuk memenangkan permainan.\n\n` +
-    `💰 <b>Saldo Koin Anda:</b> <code>${coins}</code> Koin\n\n` +
+    `Susun 3 simbol sejajar untuk memenangkan duel asah taktik dan raih EXP keaktifan!\n\n` +
+    `⭐ <b>Level Anda:</b> Level ${level} (<code>${exp}</code> EXP)\n\n` +
     `<b>Pilih Mode Permainan:</b>\n` +
-    `• 🤖 <b>Lawan Bot AI:</b> Bertanding solo langkah-demi-langkah melawan Bot AI yang cerdas.\n` +
-    `• ⚔️ <b>Lawan Teman (PvP):</b> Buka tantangan duel 1 lawan 1 (di chat pribadi atau grup)!\n\n` +
+    `• 🤖 <b>Lawan Bot AI (Solo):</b> Bertanding langkah-demi-langkah melawan Bot AI (+5 EXP jika menang).\n` +
+    `• ⚔️ <b>Lawan Teman (PvP):</b> Buka tantangan duel di grup atau chat (+5 EXP untuk pemenang).\n\n` +
     `<i>Pilih mode di bawah ini untuk memulai:</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🤖 Lawan Bot (Solo)', 'ttt:bet:ai')
-    .text('⚔️ Lawan Teman (PvP)', 'ttt:bet:pvp')
+    .text('🤖 Lawan Bot (Solo)', 'ttt:start:ai:0')
+    .text('⚔️ Lawan Teman (PvP)', 'ttt:start:pvp:0')
     .row()
-    .text('👛 Cek Saldo Koin', 'game:action:koin')
     .text('🎮 Menu Games', 'game:nav:menu');
 
   if (ctx.callbackQuery) {
@@ -183,28 +183,23 @@ ticTacToeComposer.callbackQuery('ttt:menu', async ctx => {
   await sendTttMenu(ctx);
 });
 
-// Menu Pemilihan Taruhan Lawan Bot (AI)
+// Menu Pemilihan Mode Lawan Bot (AI)
 ticTacToeComposer.callbackQuery('ttt:bet:ai', async ctx => {
   await ctx.answerCallbackQuery().catch(() => { });
   const userId = ctx.from.id;
   const user = userRepository.getUser(userId);
-  const coins = user ? user.coins : 0;
+  const exp = user ? user.exp : 0;
 
   const text =
     `🤖 <b>TIC TAC TOE — LAWAN BOT AI</b>\n\n` +
-    `Pilih jumlah koin yang ingin Anda pertaruhkan melawan Bot:\n\n` +
-    `💰 <b>Saldo Koin Anda:</b> <code>${coins}</code> Koin\n\n` +
-    `• 🆓 <b>Santai:</b> Bebas risiko, hadiah +2 Koin & +1 EXP jika menang.\n` +
-    `• 🥉 <b>5 Koin:</b> Menang dapat 10 Koin (+10 EXP).\n` +
-    `• 🥈 <b>10 Koin:</b> Menang dapat 20 Koin (+10 EXP).\n` +
-    `• 🥇 <b>25 Koin:</b> Menang dapat 50 Koin (+15 EXP).`;
+    `Bertanding solo melawan Bot AI untuk melatih taktik:\n\n` +
+    `• 🏆 Menang: <b>+5 EXP</b>\n` +
+    `• 🤝 Seri: <b>+2 EXP</b>\n` +
+    `• 😢 Kalah: <b>+1 EXP</b>\n\n` +
+    `<i>Tekan tombol di bawah untuk mulai bermain:</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🆓 Santai (0 Koin)', 'ttt:start:ai:0')
-    .text('🥉 5 Koin', 'ttt:start:ai:5')
-    .row()
-    .text('🥈 10 Koin', 'ttt:start:ai:10')
-    .text('🥇 25 Koin', 'ttt:start:ai:25')
+    .text('▶️ Mulai Main Lawan Bot', 'ttt:start:ai:0')
     .row()
     .text('🔙 Kembali', 'ttt:menu');
 
@@ -213,30 +208,22 @@ ticTacToeComposer.callbackQuery('ttt:bet:ai', async ctx => {
   });
 });
 
-// Menu Pemilihan Taruhan Lawan Teman (PvP)
+// Menu Pemilihan Mode Lawan Teman (PvP)
 ticTacToeComposer.callbackQuery('ttt:bet:pvp', async ctx => {
   await ctx.answerCallbackQuery().catch(() => { });
   const userId = ctx.from.id;
   const user = userRepository.getUser(userId);
-  const coins = user ? user.coins : 0;
 
   const text =
     `⚔️ <b>TIC TAC TOE — LAWAN TEMAN (PvP)</b>\n\n` +
-    `Tantang teman Anda dalam duel Tic Tac Toe!\n` +
-    `Pilih nominal koin taruhan untuk tantangan ini:\n\n` +
-    `💰 <b>Saldo Koin Anda:</b> <code>${coins}</code> Koin\n\n` +
-    `• 🆓 <b>Santai:</b> Bebas risiko (hanya untuk keseruan).\n` +
-    `• 🥉 <b>5 Koin:</b> Total pot 10 Koin untuk pemenang.\n` +
-    `• 🥈 <b>10 Koin:</b> Total pot 20 Koin untuk pemenang.\n` +
-    `• 🥇 <b>25 Koin:</b> Total pot 50 Koin untuk pemenang.\n\n` +
-    `<i>⚡ Pemenang duel mengambil seluruh pot koin taruhan!</i>`;
+    `Tantang teman Anda dalam duel Tic Tac Toe!\n\n` +
+    `• 🏆 Pemenang: <b>+5 EXP</b>\n` +
+    `• 🤝 Hasil Seri: <b>+2 EXP</b> masing-masing\n` +
+    `• 😢 Kalah: <b>+1 EXP</b>\n\n` +
+    `<i>Tekan tombol di bawah untuk membuat tantangan:</i>`;
 
   const keyboard = new InlineKeyboard()
-    .text('🆓 Santai (0 Koin)', 'ttt:start:pvp:0')
-    .text('🥉 5 Koin', 'ttt:start:pvp:5')
-    .row()
-    .text('🥈 10 Koin', 'ttt:start:pvp:10')
-    .text('🥇 25 Koin', 'ttt:start:pvp:25')
+    .text('⚔️ Buat Tantangan Duel', 'ttt:start:pvp:0')
     .row()
     .text('🔙 Kembali', 'ttt:menu');
 
@@ -257,23 +244,6 @@ ticTacToeComposer.callbackQuery(/^ttt:start:ai:(\d+)$/, async ctx => {
   if (!user) {
     await ctx.answerCallbackQuery({ text: 'User tidak ditemukan.', show_alert: true });
     return;
-  }
-
-  if (bet > 0 && user.coins < bet) {
-    await ctx.answerCallbackQuery({
-      text: `Koin Anda tidak cukup! Dibutuhkan ${bet} Koin, saldo Anda: ${user.coins} Koin.`,
-      show_alert: true
-    });
-    return;
-  }
-
-  // Potong koin taruhan jika ada
-  if (bet > 0) {
-    const ok = userRepository.deductCoins(userId, bet);
-    if (!ok) {
-      await ctx.answerCallbackQuery({ text: 'Gagal memotong saldo koin taruhan.', show_alert: true });
-      return;
-    }
   }
 
   await ctx.answerCallbackQuery({ text: '🎮 Permainan dimulai! Anda memegang ❌.' }).catch(() => { });
@@ -318,23 +288,6 @@ ticTacToeComposer.callbackQuery(/^ttt:start:pvp:(\d+)$/, async ctx => {
   if (!user) {
     await ctx.answerCallbackQuery({ text: 'User tidak ditemukan.', show_alert: true });
     return;
-  }
-
-  if (bet > 0 && user.coins < bet) {
-    await ctx.answerCallbackQuery({
-      text: `Koin Anda tidak cukup! Dibutuhkan ${bet} Koin, saldo Anda: ${user.coins} Koin.`,
-      show_alert: true
-    });
-    return;
-  }
-
-  // Potong koin taruhan penantang di awal
-  if (bet > 0) {
-    const ok = userRepository.deductCoins(userId, bet);
-    if (!ok) {
-      await ctx.answerCallbackQuery({ text: 'Gagal memotong saldo koin taruhan.', show_alert: true });
-      return;
-    }
   }
 
   await ctx.answerCallbackQuery({ text: '⚔️ Tantangan PvP dibuat!' }).catch(() => { });
@@ -410,23 +363,6 @@ ticTacToeComposer.callbackQuery(/^ttt:accept:([a-zA-Z0-9_]+)$/, async ctx => {
     return;
   }
 
-  if (session.bet > 0 && user.coins < session.bet) {
-    await ctx.answerCallbackQuery({
-      text: `Koin Anda tidak cukup untuk menerima tantangan ini (${session.bet} Koin dibutuhkan)!`,
-      show_alert: true
-    });
-    return;
-  }
-
-  // Potong koin penantang kedua jika ada taruhan
-  if (session.bet > 0) {
-    const ok = userRepository.deductCoins(opponentId, session.bet);
-    if (!ok) {
-      await ctx.answerCallbackQuery({ text: 'Gagal memotong saldo koin taruhan.', show_alert: true });
-      return;
-    }
-  }
-
   // Bersihkan timer tunggu
   if (session.timeoutTimer) {
     clearTimeout(session.timeoutTimer);
@@ -464,16 +400,11 @@ ticTacToeComposer.callbackQuery(/^ttt:cancel:([a-zA-Z0-9_]+)$/, async ctx => {
     return;
   }
 
-  // Kembalikan koin taruhan
-  if (session.bet > 0) {
-    userRepository.addCoins(session.playerX.id, session.bet, 0);
-  }
-
   deleteSession(sessionId);
 
   await ctx.answerCallbackQuery({ text: 'Tantangan berhasil dibatalkan.' }).catch(() => { });
   await ctx.editMessageText(
-    `❌ <b>Tantangan Dibatalkan.</b>\nTantangan Tic Tac Toe telah dibatalkan oleh <b>${escapeHtml(session.playerX.name)}</b>. Koin taruhan telah dikembalikan.`,
+    `❌ <b>Tantangan Dibatalkan.</b>\nTantangan Tic Tac Toe telah dibatalkan oleh <b>${escapeHtml(session.playerX.name)}</b>.`,
     { parse_mode: 'HTML' }
   ).catch(() => { });
 });
@@ -665,25 +596,14 @@ function handleGameEnding(session: TttSession) {
   if (session.mode === 'ai') {
     const user = session.playerX;
     if (session.winner === 'X') {
-      // Pemain menang lawan bot
-      if (bet > 0) {
-        userRepository.recordGameResult(user.id, true, bet * 2, 10);
-      } else {
-        userRepository.addCoins(user.id, 2, 1);
-        userRepository.recordGameResult(user.id, true, 2, 1);
-      }
+      // Pemain menang lawan bot: +5 EXP
+      userRepository.recordGameResult(user.id, true, 0, 5);
     } else if (session.winner === 'draw') {
-      // Seri lawan bot: kembalikan taruhan
-      if (bet > 0) {
-        userRepository.addCoins(user.id, bet, 2);
-      } else {
-        userRepository.addCoins(user.id, 1, 1);
-      }
+      // Seri lawan bot: +2 EXP
+      userRepository.recordGameResult(user.id, false, 0, 2);
     } else if (session.winner === 'O') {
-      // Bot menang
-      if (bet > 0) {
-        userRepository.recordGameResult(user.id, false, 0, 0); // Koin sudah dipotong di awal
-      }
+      // Bot menang: +1 EXP
+      userRepository.recordGameResult(user.id, false, 0, 1);
     }
   } else {
     // Mode PvP
@@ -691,32 +611,14 @@ function handleGameEnding(session: TttSession) {
     const pO = session.playerO;
 
     if (session.winner === 'X') {
-      const pot = bet > 0 ? bet * 2 : 0;
-      if (pot > 0) {
-        userRepository.recordGameResult(pX.id, true, pot, 15);
-        userRepository.recordGameResult(pO.id, false, 0, 2);
-      } else {
-        userRepository.addCoins(pX.id, 3, 2);
-        userRepository.recordGameResult(pX.id, true, 3, 2);
-      }
+      userRepository.recordGameResult(pX.id, true, 0, 5);
+      userRepository.recordGameResult(pO.id, false, 0, 1);
     } else if (session.winner === 'O') {
-      const pot = bet > 0 ? bet * 2 : 0;
-      if (pot > 0) {
-        userRepository.recordGameResult(pO.id, true, pot, 15);
-        userRepository.recordGameResult(pX.id, false, 0, 2);
-      } else {
-        userRepository.addCoins(pO.id, 3, 2);
-        userRepository.recordGameResult(pO.id, true, 3, 2);
-      }
+      userRepository.recordGameResult(pO.id, true, 0, 5);
+      userRepository.recordGameResult(pX.id, false, 0, 1);
     } else if (session.winner === 'draw') {
-      // Kembalikan taruhan ke kedua pemain
-      if (bet > 0) {
-        userRepository.addCoins(pX.id, bet, 3);
-        userRepository.addCoins(pO.id, bet, 3);
-      } else {
-        userRepository.addCoins(pX.id, 1, 1);
-        userRepository.addCoins(pO.id, 1, 1);
-      }
+      userRepository.recordGameResult(pX.id, false, 0, 2);
+      userRepository.recordGameResult(pO.id, false, 0, 2);
     }
   }
 }

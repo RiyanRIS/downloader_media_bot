@@ -46,30 +46,6 @@ function isAwaitingReceipt(userId: number): boolean {
   return true;
 }
 
-/** Cek apakah user (VIP/Admin) bebas biaya koin untuk fitur AI keuangan */
-function isExpenseFree(userId: number): boolean {
-  const user = userRepository.getUser(userId);
-  return user?.role === 'vip' || user?.role === 'admin';
-}
-
-/** Buat pesan "koin tidak cukup" dengan tombol cara mendapatkan koin */
-function buildInsufficientCoinMsg(cost: number, currentCoins: number, featureName: string): { text: string; keyboard: InlineKeyboard } {
-  const text =
-    `⚠️ <b>Koin Tidak Cukup!</b>\n\n` +
-    `Fitur <b>${featureName}</b> membutuhkan <b>${cost} Koin</b>.\n` +
-    `Saldo koin Anda saat ini: 💰 <b>${currentCoins} Koin</b>.\n\n` +
-    `<b>Cara mendapatkan koin:</b>\n` +
-    `• 🎁 Klaim bonus harian gratis\n` +
-    `• 🎮 Mainkan mini-games di Arena Games\n` +
-    `• 💖 Dukung tools & beli paket berbayar di /dukung (/topup)`;
-  const keyboard = new InlineKeyboard()
-    .text('🎁 Klaim Harian', 'game:action:claim')
-    .text('🎮 Main Game', 'game:nav:menu')
-    .row()
-    .text('💖 Beli Paket Dukungan', 'topup:menu')
-    .text('📊 Keuangan', 'keuangan:menu');
-  return { text, keyboard };
-}
 
 export function renderExpenseCard(expense: Expense): { text: string; keyboard: InlineKeyboard } {
   const icon = CATEGORY_MAP[expense.category] || '💰';
@@ -106,16 +82,10 @@ export function renderExpenseCard(expense: Expense): { text: string; keyboard: I
     text += `✨ <i>Tersimpan juga di catatan dompet pribadi pencatat</i>\n`;
   }
 
-  // Tampilkan info koin yang dipotong dan EXP yang didapat
+  // Tampilkan info EXP keaktifan yang didapat
   const expenseUser = userRepository.getUser(expense.telegram_id);
   const expGained = expense.source_type === 'receipt' ? 5 : 3;
-  if (expenseUser && expenseUser.role !== 'vip' && expenseUser.role !== 'admin') {
-    const coinCut = expense.source_type === 'receipt' ? config.coinCostExpenseReceipt : config.coinCostExpenseText;
-    const byWhom = isGroup ? `saldo pribadi ${escapeHtml(expense.user_name || 'pencatat')}` : 'saldo Anda';
-    text += `🪙 <i>-${coinCut} Koin dari ${byWhom} · ⭐ +${expGained} EXP · Sisa: ${expenseUser.coins} Koin</i>\n`;
-  } else {
-    text += `⭐ <i>+${expGained} EXP diperoleh (VIP/Admin: 0 Koin)</i>\n`;
-  }
+  text += `⭐ <i>+${expGained} EXP Keaktifan diperoleh (Total: ${expenseUser?.exp ?? 0} EXP)</i>\n`;
 
   const noteBtnText = expense.notes ? '📝 Edit Catatan' : '📝 Tambahkan Catatan';
 
@@ -197,7 +167,7 @@ export function renderFinancialReport(userId: number): { text: string; keyboard:
   text += `💡 <b>Petunjuk:</b>\n`;
   text += `• Tekan tombol <b>📝 Catat Pengeluaran</b> untuk mencatat belanja dengan teks.\n`;
   text += `• Tekan tombol <b>🧾 Scan Struk</b> untuk membaca foto struk otomatis via AI.\n`;
-  text += `• 🌟 VIP &amp; Admin: <b>Gratis biaya</b> untuk semua fitur keuangan.`;
+  text += `• ✨ Seluruh fitur keuangan <b>100% GRATIS</b> &amp; dapatkan bonus EXP keaktifan setiap mencatat!`;
 
   const keyboard = new InlineKeyboard()
     .text('🔄 Perbarui Data', 'exp_refresh')
@@ -275,7 +245,7 @@ export function renderGroupFinancialReport(chatId: number, groupTitle: string): 
   }
 
   text += `💡 <b>Info Penggunaan:</b>\n`;
-  text += `• Koin dipotong dari saldo pribadi anggota yang mencatat.\n`;
+  text += `• Pencatatan kas bersama <b>100% GRATIS</b> &amp; dapatkan bonus EXP keaktifan untuk pencatat.\n`;
   text += `• Tekan tombol <b>📌 Simpan juga di Pribadi</b> pada kartu transaksi jika ingin memasukkannya juga ke dompet pribadi Anda.`;
 
   const keyboard = new InlineKeyboard()
@@ -318,26 +288,10 @@ expenseComposer.callbackQuery('keuangan:nav:catat', async ctx => {
     return;
   }
 
-  // Cek koin (VIP/Admin gratis)
-  if (!isExpenseFree(from.id)) {
-    const user = userRepository.getUser(from.id);
-    const cost = config.coinCostExpenseText;
-    if (!user || user.coins < cost) {
-      await ctx.answerCallbackQuery({ text: `Koin tidak cukup! Butuh ${cost} koin.`, show_alert: true });
-      const { text, keyboard } = buildInsufficientCoinMsg(cost, user?.coins ?? 0, 'Catat Pengeluaran (Teks)');
-      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-      return;
-    }
-  }
-
   awaitingCatatText.set(from.id, Date.now());
   await ctx.answerCallbackQuery();
 
   const isGroup = ctx.chat && (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup');
-  const cost = isExpenseFree(from.id) ? 0 : config.coinCostExpenseText;
-  const costNote = cost > 0 
-    ? `\n\n<i>Biaya: <b>${cost} Koin</b> (dipotong dari saldo pribadi ${escapeHtml(from.first_name)}).</i>` 
-    : `\n\n<i>Gratis untuk VIP/Admin.</i>`;
 
   const cancelKeyboard = new InlineKeyboard()
     .text('❌ Batalkan', 'keuangan:cancalcatat')
@@ -352,7 +306,8 @@ expenseComposer.callbackQuery('keuangan:nav:catat', async ctx => {
     `Ketikkan cerita belanja Anda di chat ini. Contoh:\n` +
     `• <code>beli beras 5kg 75rb di pasar</code>\n` +
     `• <code>bayar listrik rumah 250k</code>\n` +
-    `• <code>beli susu anak 120rb di indomaret</code>${costNote}`,
+    `• <code>beli susu anak 120rb di indomaret</code>\n\n` +
+    `<i>✨ Fitur catat keuangan 100% gratis (+3 EXP keaktifan).</i>`,
     { parse_mode: 'HTML', reply_markup: cancelKeyboard }
   );
 });
@@ -376,26 +331,10 @@ expenseComposer.callbackQuery('keuangan:nav:struk', async ctx => {
     return;
   }
 
-  // Cek koin (VIP/Admin gratis)
-  if (!isExpenseFree(from.id)) {
-    const user = userRepository.getUser(from.id);
-    const cost = config.coinCostExpenseReceipt;
-    if (!user || user.coins < cost) {
-      await ctx.answerCallbackQuery({ text: `Koin tidak cukup! Butuh ${cost} koin.`, show_alert: true });
-      const { text, keyboard } = buildInsufficientCoinMsg(cost, user?.coins ?? 0, 'Scan Struk AI');
-      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-      return;
-    }
-  }
-
   awaitingReceiptPhotos.set(from.id, Date.now());
   await ctx.answerCallbackQuery();
 
   const isGroup = ctx.chat && (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup');
-  const cost = isExpenseFree(from.id) ? 0 : config.coinCostExpenseReceipt;
-  const costNote = cost > 0 
-    ? `\n\n<i>Biaya: <b>${cost} Koin</b> (dipotong dari saldo pribadi ${escapeHtml(from.first_name)}).</i>` 
-    : `\n\n<i>Gratis untuk VIP/Admin.</i>`;
 
   const cancelKeyboard = new InlineKeyboard()
     .text(isGroup ? '📊 Kas Grup' : '📋 Kembali ke Keuangan', 'keuangan:menu');
@@ -407,7 +346,8 @@ expenseComposer.callbackQuery('keuangan:nav:struk', async ctx => {
   await ctx.reply(
     `${titleHeader}\n\n` +
     `Silakan kirimkan foto struk/nota belanja Anda sekarang.\n` +
-    `AI akan otomatis membaca total belanja, toko/merchant, dan item barang.${costNote}\n\n` +
+    `AI akan otomatis membaca total belanja, toko/merchant, dan item barang.\n\n` +
+    `<i>✨ Fitur scan struk AI 100% gratis (+5 EXP keaktifan).</i>\n` +
     `<i>Tip: Pastikan tulisan dan angka total pada struk terlihat jelas dan tidak buram.</i>`,
     { parse_mode: 'HTML', reply_markup: cancelKeyboard }
   );
@@ -445,18 +385,6 @@ expenseComposer.on('message:text', async (ctx, next) => {
       return;
     }
 
-    // Cek & potong koin (VIP/Admin gratis)
-    const cost = config.coinCostExpenseText;
-    if (!isExpenseFree(from.id)) {
-      const user = userRepository.getUser(from.id);
-      if (!user || user.coins < cost) {
-        const { text: errText, keyboard: errKb } = buildInsufficientCoinMsg(cost, user?.coins ?? 0, 'Catat Pengeluaran (Teks)');
-        await ctx.reply(errText, { parse_mode: 'HTML', reply_markup: errKb });
-        return;
-      }
-      userRepository.deductCoins(from.id, cost);
-    }
-
     const waitMsg = await ctx.reply('⏳ <i>Sedang menganalisis pengeluaran Anda...</i>', { parse_mode: 'HTML' });
 
     try {
@@ -478,7 +406,7 @@ expenseComposer.on('message:text', async (ctx, next) => {
       });
 
       // Beri reward EXP sebagai indikator keaktifan penggunaan bot (+3 EXP)
-      userRepository.addCoins(from.id, 0, 3);
+      userRepository.addExp(from.id, 3);
 
       const savedExpense = expenseRepository.getExpenseById(expenseId)!;
       const { text, keyboard } = renderExpenseCard(savedExpense);
@@ -569,18 +497,6 @@ expenseComposer.command('catat', async ctx => {
     return;
   }
 
-  // Cek & potong koin (VIP/Admin gratis)
-  const coinCostText = config.coinCostExpenseText;
-  if (!isExpenseFree(from.id)) {
-    const user = userRepository.getUser(from.id);
-    if (!user || user.coins < coinCostText) {
-      const { text: errText, keyboard: errKb } = buildInsufficientCoinMsg(coinCostText, user?.coins ?? 0, 'Catat Pengeluaran (Teks)');
-      await ctx.reply(errText, { parse_mode: 'HTML', reply_markup: errKb });
-      return;
-    }
-    userRepository.deductCoins(from.id, coinCostText);
-  }
-
   const waitMsg = await ctx.reply('⏳ <i>Sedang menganalisis pengeluaran...</i>', { parse_mode: 'HTML' });
 
   try {
@@ -602,7 +518,7 @@ expenseComposer.command('catat', async ctx => {
     });
 
     // Beri reward EXP sebagai indikator keaktifan penggunaan bot (+3 EXP)
-    userRepository.addCoins(from.id, 0, 3);
+    userRepository.addExp(from.id, 3);
 
     const savedExpense = expenseRepository.getExpenseById(expenseId)!;
     const { text, keyboard } = renderExpenseCard(savedExpense);
@@ -621,7 +537,7 @@ expenseComposer.command('catat', async ctx => {
   }
 });
 
-// 2. Command /struk — redirect ke alur tombol (cek koin, lalu prompt foto)
+// 2. Command /struk — redirect ke alur tombol (prompt foto struk)
 expenseComposer.command('struk', async ctx => {
   const from = ctx.from;
   if (!from) return;
@@ -635,24 +551,9 @@ expenseComposer.command('struk', async ctx => {
     return;
   }
 
-  // Cek koin (VIP/Admin gratis)
-  if (!isExpenseFree(from.id)) {
-    const user = userRepository.getUser(from.id);
-    const cost = config.coinCostExpenseReceipt;
-    if (!user || user.coins < cost) {
-      const { text, keyboard } = buildInsufficientCoinMsg(cost, user?.coins ?? 0, 'Scan Struk AI');
-      await ctx.reply(text, { parse_mode: 'HTML', reply_markup: keyboard });
-      return;
-    }
-  }
-
   awaitingReceiptPhotos.set(from.id, Date.now());
 
   const isGroup = ctx.chat && (ctx.chat.type === 'group' || ctx.chat.type === 'supergroup');
-  const cost = isExpenseFree(from.id) ? 0 : config.coinCostExpenseReceipt;
-  const costNote = cost > 0
-    ? `\n\n<i>Biaya: <b>${cost} Koin</b> (dipotong dari saldo pribadi ${escapeHtml(from.first_name)}).</i>`
-    : `\n\n<i>Gratis untuk VIP/Admin.</i>`;
 
   const cancelKeyboard = new InlineKeyboard()
     .text(isGroup ? '📊 Kas Grup' : '📋 Kembali ke Keuangan', 'keuangan:menu');
@@ -664,7 +565,8 @@ expenseComposer.command('struk', async ctx => {
   await ctx.reply(
     `${titleHeader}\n\n` +
     `Silakan kirimkan foto struk/nota belanja Anda sekarang.\n` +
-    `AI akan otomatis membaca total belanja, toko/merchant, dan item barang.${costNote}\n\n` +
+    `AI akan otomatis membaca total belanja, toko/merchant, dan item barang.\n\n` +
+    `<i>✨ Fitur scan struk AI 100% gratis (+5 EXP keaktifan).</i>\n` +
     `<i>Tip: Pastikan tulisan dan angka total pada struk terlihat jelas dan tidak buram.</i>`,
     { parse_mode: 'HTML', reply_markup: cancelKeyboard }
   );
@@ -694,18 +596,6 @@ expenseComposer.on('message:photo', async (ctx, next) => {
       { parse_mode: 'HTML', link_preview_options: { is_disabled: true } }
     );
     return;
-  }
-
-  // Cek & potong koin (VIP/Admin gratis)
-  const coinCostReceipt = config.coinCostExpenseReceipt;
-  if (!isExpenseFree(from.id)) {
-    const user = userRepository.getUser(from.id);
-    if (!user || user.coins < coinCostReceipt) {
-      const { text: errText, keyboard: errKb } = buildInsufficientCoinMsg(coinCostReceipt, user?.coins ?? 0, 'Scan Struk AI');
-      await ctx.reply(errText, { parse_mode: 'HTML', reply_markup: errKb });
-      return;
-    }
-    userRepository.deductCoins(from.id, coinCostReceipt);
   }
 
   const waitMsg = await ctx.reply('🧾 <i>Sedang membaca dan menganalisis struk menggunakan AI...</i>', { parse_mode: 'HTML' });
@@ -744,7 +634,7 @@ expenseComposer.on('message:photo', async (ctx, next) => {
     });
 
     // Beri reward EXP sebagai indikator keaktifan penggunaan bot (+5 EXP)
-    userRepository.addCoins(from.id, 0, 5);
+    userRepository.addExp(from.id, 5);
 
     const savedExpense = expenseRepository.getExpenseById(expenseId)!;
     const { text, keyboard } = renderExpenseCard(savedExpense);

@@ -47,7 +47,7 @@ export const downloadRepository = {
     const row = db.prepare(`
       SELECT COUNT(*) as count 
       FROM downloads_log 
-      WHERE DATE(downloaded_at) = DATE('now')
+      WHERE DATE(downloaded_at) = DATE('now', 'localtime')
     `).get() as { count: number };
     return row?.count || 0;
   }

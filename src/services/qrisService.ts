@@ -1,6 +1,6 @@
 import QRCode from 'qrcode';
 import { config } from '../config/config.js';
-import { transactionRepository, Transaction } from '../database/repositories/transactionRepository.js';
+import { donationRepository, Donation } from '../database/repositories/donationRepository.js';
 import { userRepository, User } from '../database/repositories/userRepository.js';
 import { convertQRIS, validateQRIS, parseQRIS } from './qris/index.js';
 
@@ -71,33 +71,129 @@ export class QrisService {
   }
 
   /**
+   * Membuat transaksi dukungan sukarela langsung menggunakan QRIS Statis murni
+   * tanpa penentuan nominal (pengguna bebas transfer berapapun).
+   */
+  async getStaticQrisTransaction(
+    userId: number,
+    _username?: string
+  ): Promise<{
+    success: boolean;
+    orderId: string;
+    staticQris: string;
+    qrBuffer: Buffer;
+    merchantName?: string;
+    isFallback: boolean;
+    errorMessage?: string;
+  }> {
+    try {
+      const { qris: staticQris, isFallback } = this.getActiveStaticQris();
+
+      // Generate Gambar QR PNG dari QRIS Statis murni
+      const qrBuffer = await QRCode.toBuffer(staticQris, {
+        type: 'png',
+        width: 450,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+
+      const orderId = `DONASI_${userId}_${Date.now()}`;
+
+      // Simpan ke database donasi sebagai status PENDING
+      donationRepository.createDonation({
+        telegramId: userId,
+        orderId,
+        amount: 0
+      });
+
+      let merchantName: string | undefined;
+      try {
+        const parsed = parseQRIS(staticQris);
+        merchantName = parsed.merchantName;
+      } catch {
+        // Abaikan jika parsing nama merchant gagal
+      }
+
+      return {
+        success: true,
+        orderId,
+        staticQris,
+        qrBuffer,
+        merchantName,
+        isFallback
+      };
+    } catch (err: any) {
+      console.error('Error saat membuat QRIS Statis:', err);
+      return {
+        success: false,
+        orderId: '',
+        staticQris: '',
+        qrBuffer: Buffer.alloc(0),
+        isFallback: false,
+        errorMessage: err.message || 'Gagal menghasilkan gambar QRIS.'
+      };
+    }
+  }
+
+  /**
    * Membuat transaksi baru dan menghasilkan QR Code QRIS Dinamis
-   * dengan nominal pas sesuai harga paket koin.
+   * Mendukung pilihan paket bawaan maupun nominal donasi bebas (minimal Rp 1.000).
    */
   async createDynamicQrisTransaction(
     userId: number,
-    packageId: string,
+    packageIdOrAmount: string | number,
     username?: string
   ): Promise<{
     success: boolean;
     orderId: string;
     dynamicQris: string;
     qrBuffer: Buffer;
-    packageInfo: TopupPackage;
+    amount: number;
+    title: string;
+    packageInfo?: TopupPackage;
     isFallback: boolean;
     merchantName?: string;
     errorMessage?: string;
   }> {
-    const pkg = TOPUP_PACKAGES[packageId];
-    if (!pkg) {
+    let price: number = 0;
+    let title: string = 'Dukungan Sukarela';
+    let pkg: TopupPackage | undefined;
+    let pkgId: string = 'DONATION';
+    let coinsBonus: number = 0;
+
+    if (typeof packageIdOrAmount === 'number') {
+      price = Math.floor(packageIdOrAmount);
+      pkgId = `DONASI_${price}`;
+      title = `💖 Donasi Sukarela Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
+    } else if (TOPUP_PACKAGES[packageIdOrAmount]) {
+      pkg = TOPUP_PACKAGES[packageIdOrAmount];
+      price = pkg.price;
+      pkgId = pkg.id;
+      title = pkg.name;
+      coinsBonus = pkg.coins;
+    } else {
+      const parsedNum = parseInt(packageIdOrAmount.replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsedNum)) {
+        price = parsedNum;
+        pkgId = `DONASI_${price}`;
+        title = `💖 Donasi Sukarela Rp ${new Intl.NumberFormat('id-ID').format(price)}`;
+      }
+    }
+
+    if (!price || price < 1000) {
       return {
         success: false,
         orderId: '',
         dynamicQris: '',
         qrBuffer: Buffer.alloc(0),
-        packageInfo: null as any,
+        amount: 0,
+        title: '',
+        packageInfo: undefined,
         isFallback: false,
-        errorMessage: 'Paket top-up tidak ditemukan.'
+        errorMessage: 'Nominal donasi minimal adalah Rp 1.000.'
       };
     }
 
@@ -105,7 +201,7 @@ export class QrisService {
       const { qris: staticQris, isFallback } = this.getActiveStaticQris();
 
       // Konversi QRIS Statis menjadi QRIS Dinamis dengan nominal pas
-      const dynamicQris = convertQRIS(staticQris, { amount: pkg.price });
+      const dynamicQris = convertQRIS(staticQris, { amount: price });
 
       // Generate Gambar QR PNG beresolusi tinggi
       const qrBuffer = await QRCode.toBuffer(dynamicQris, {
@@ -118,16 +214,13 @@ export class QrisService {
         }
       });
 
-      const orderId = `TOPUP_${userId}_${Date.now()}`;
+      const orderId = `DONASI_${userId}_${Date.now()}`;
 
-      // Simpan ke database transaksi dengan status PENDING
-      transactionRepository.createTransaction({
+      // Simpan ke database donasi dengan status PENDING
+      donationRepository.createDonation({
         telegramId: userId,
-        merchantOrderId: orderId,
-        reference: null,
-        packageId: pkg.id,
-        amount: pkg.price,
-        coins: pkg.coins
+        orderId,
+        amount: price
       });
 
       let merchantName: string | undefined;
@@ -143,7 +236,15 @@ export class QrisService {
         orderId,
         dynamicQris,
         qrBuffer,
-        packageInfo: pkg,
+        amount: price,
+        title,
+        packageInfo: pkg || {
+          id: pkgId,
+          name: title,
+          coins: coinsBonus,
+          price,
+          description: 'Dukungan sukarela untuk kelangsungan server'
+        },
         isFallback,
         merchantName
       };
@@ -154,6 +255,8 @@ export class QrisService {
         orderId: '',
         dynamicQris: '',
         qrBuffer: Buffer.alloc(0),
+        amount: price,
+        title: '',
         packageInfo: pkg,
         isFallback: false,
         errorMessage: err.message || 'Gagal mengubah kode QRIS menjadi dinamis.'
@@ -162,43 +265,42 @@ export class QrisService {
   }
 
   /**
-   * Konfirmasi manual pembayaran oleh Admin:
-   * Mengubah status transaksi menjadi SUCCESS, menambahkan koin/EXP ke user,
-   * serta mengaktifkan status VIP (jika paket VIP).
+   * Konfirmasi manual pembayaran donasi oleh Admin:
+   * Mengubah status transaksi menjadi SUCCESS, memberikan badge Sahabat Dermawan (VIP 30 Hari) & bonus EXP keaktifan.
    */
   confirmPayment(orderId: string, adminId: number): {
     success: boolean;
-    transaction?: Transaction;
+    transaction?: Donation;
     packageInfo?: TopupPackage;
     updatedUser?: User | null;
     errorMessage?: string;
   } {
-    const tx = transactionRepository.getTransaction(orderId);
+    const tx = donationRepository.getDonation(orderId);
     if (!tx) {
-      return { success: false, errorMessage: 'Data transaksi tidak ditemukan di database.' };
+      return { success: false, errorMessage: 'Data donasi tidak ditemukan di database.' };
     }
 
     if (tx.status === 'SUCCESS') {
-      return { success: false, errorMessage: 'Transaksi ini sudah dikonfirmasi sebelumnya.' };
+      return { success: false, errorMessage: 'Donasi ini sudah dikonfirmasi sebelumnya.' };
     }
 
-    const pkg = TOPUP_PACKAGES[tx.package_id];
-    if (!pkg) {
-      return { success: false, errorMessage: 'Data paket tidak valid.' };
-    }
+    const pkg = {
+      id: orderId,
+      name: tx.amount > 0 ? `Donasi Sukarela Rp ${new Intl.NumberFormat('id-ID').format(tx.amount)}` : 'Dukungan Sukarela',
+      coins: 0,
+      price: tx.amount,
+      description: 'Dukungan sukarela untuk kelangsungan bot'
+    };
 
-    // Perbarui status transaksi menjadi SUCCESS
-    const reference = `MANUAL_ADMIN_${adminId}`;
-    transactionRepository.updateStatus(orderId, 'SUCCESS', reference);
+    // Perbarui status donasi menjadi SUCCESS
+    donationRepository.updateStatus(orderId, 'SUCCESS', adminId);
 
-    // Tambahkan Koin & EXP ke akun user
-    const expBonus = Math.floor(pkg.coins / 10);
-    userRepository.addCoins(tx.telegram_id, pkg.coins, expBonus);
+    // Berikan reward EXP keaktifan (minimal 100 EXP untuk donasi sukarela)
+    const expBonus = tx.amount > 0 ? Math.max(50, Math.floor(tx.amount / 100)) : 100;
+    userRepository.addExp(tx.telegram_id, expBonus);
 
-    // Jika paket VIP, berikan masa aktif VIP (misal 30 hari)
-    if (pkg.isVipBonus && pkg.vipDays) {
-      userRepository.setRole(tx.telegram_id, 'vip', pkg.vipDays);
-    }
+    // Berikan gelar kehormatan donatur / VIP 30 hari
+    userRepository.setRole(tx.telegram_id, 'vip', 30);
 
     const updatedUser = userRepository.getUser(tx.telegram_id);
 
@@ -215,20 +317,19 @@ export class QrisService {
    */
   rejectPayment(orderId: string, adminId: number): {
     success: boolean;
-    transaction?: Transaction;
+    transaction?: Donation;
     errorMessage?: string;
   } {
-    const tx = transactionRepository.getTransaction(orderId);
+    const tx = donationRepository.getDonation(orderId);
     if (!tx) {
-      return { success: false, errorMessage: 'Data transaksi tidak ditemukan.' };
+      return { success: false, errorMessage: 'Data donasi tidak ditemukan.' };
     }
 
     if (tx.status === 'SUCCESS') {
-      return { success: false, errorMessage: 'Transaksi ini sudah berstatus sukses dan tidak dapat ditolak.' };
+      return { success: false, errorMessage: 'Donasi ini sudah berstatus sukses dan tidak dapat ditolak.' };
     }
 
-    const reference = `REJECTED_ADMIN_${adminId}`;
-    transactionRepository.updateStatus(orderId, 'REJECTED', reference);
+    donationRepository.updateStatus(orderId, 'REJECTED', adminId);
 
     return {
       success: true,

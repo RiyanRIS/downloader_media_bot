@@ -1,8 +1,8 @@
 import { Composer, InlineKeyboard } from 'grammy';
 import { MyContext } from '../context.js';
 import { userRepository } from '../../database/repositories/userRepository.js';
-import { transactionRepository, parseDbDate } from '../../database/repositories/transactionRepository.js';
-import { qrisService, TOPUP_PACKAGES } from '../../services/qrisService.js';
+import { donationRepository, parseDbDate } from '../../database/repositories/donationRepository.js';
+import { qrisService } from '../../services/qrisService.js';
 import { config } from '../../config/config.js';
 import { escapeHtml } from '../../utils/format.js';
 import { getAdminContactInfo } from '../../utils/contact.js';
@@ -25,7 +25,7 @@ interface PendingUpload {
 }
 const pendingUserUploads = new Map<number, PendingUpload>();
 
-// Handler ketika pengguna mengirimkan foto
+// Handler ketika pengguna mengirimkan foto bukti transfer
 vipComposer.on('message:photo', async (ctx, next) => {
   const from = ctx.from;
   if (!from) return next();
@@ -36,9 +36,9 @@ vipComposer.on('message:photo', async (ctx, next) => {
   }
 
   // Cek apakah user memiliki pesanan QRIS Dinamis yang masih PENDING dan dibawah 30 menit
-  const pendingTx = transactionRepository.getLatestPendingTransaction(from.id);
+  const pendingTx = donationRepository.getLatestPendingDonation(from.id);
 
-  // Jika tidak memiliki pesanan aktif, abaikan secara hening (tidak perlu direspon)
+  // Jika tidak memiliki pesanan aktif, teruskan ke handler lain (misal OCR struk pengeluaran)
   if (!pendingTx) {
     return next();
   }
@@ -46,13 +46,15 @@ vipComposer.on('message:photo', async (ctx, next) => {
   const photos = ctx.message.photo;
   const highestPhoto = photos[photos.length - 1]; // Resolusi tertinggi foto
 
-  const pkg = TOPUP_PACKAGES[pendingTx.package_id];
-  const formattedPrice = new Intl.NumberFormat('id-ID').format(pendingTx.amount);
+  const formattedPrice = pendingTx.amount > 0
+    ? `Rp ${new Intl.NumberFormat('id-ID').format(pendingTx.amount)}`
+    : 'Sukarela (Bebas)';
+  const title = `Dukungan Sukarela Pengembang`;
 
   // Simpan data upload sementara
   pendingUserUploads.set(from.id, {
     fileId: highestPhoto.file_id,
-    orderId: pendingTx.merchant_order_id,
+    orderId: pendingTx.order_id,
     fromUser: {
       id: from.id,
       first_name: from.first_name,
@@ -62,17 +64,17 @@ vipComposer.on('message:photo', async (ctx, next) => {
   });
 
   const confirmKeyboard = new InlineKeyboard()
-    .text('✅ Ya, Kirim ke Admin', `send_proof:${pendingTx.merchant_order_id}`)
+    .text('✅ Ya, Kirim ke Admin', `send_proof:${pendingTx.order_id}`)
     .row()
     .text('❌ Bukan / Batalkan', 'cancel_proof');
 
   await ctx.reply(
-    `🧾 <b>KONFIRMASI BUKTI PEMBAYARAN</b>\n\n` +
-    `Anda memiliki pesanan pembayaran aktif:\n` +
-    `• <b>Order ID:</b> <code>${pendingTx.merchant_order_id}</code>\n` +
-    `• <b>Paket:</b> ${escapeHtml(pkg ? pkg.name : pendingTx.package_id)}\n` +
-    `• <b>Total Tagihan:</b> <b>Rp ${formattedPrice}</b>\n\n` +
-    `Apakah foto ini merupakan bukti transfer pembayaran Anda untuk dikirimkan ke Admin?`,
+    `🧾 <b>KONFIRMASI BUKTI DUKUNGAN SUKARELA</b>\n\n` +
+    `Anda memiliki sesi donasi aktif:\n` +
+    `• <b>Order ID:</b> <code>${pendingTx.order_id}</code>\n` +
+    `• <b>Keterangan:</b> ${escapeHtml(title)}\n` +
+    `• <b>Nominal:</b> <b>${formattedPrice}</b>\n\n` +
+    `Apakah foto ini merupakan bukti transfer dukungan sukarela Anda untuk dikirimkan ke Admin?`,
     {
       parse_mode: 'HTML',
       reply_markup: confirmKeyboard,
@@ -97,38 +99,45 @@ vipComposer.callbackQuery(/^send_proof:([A-Za-z0-9_]+)$/, async ctx => {
   }
 
   // Validasi kembali batas waktu pesanan 30 menit
-  const pendingTx = transactionRepository.getLatestPendingTransaction(from.id);
-  if (!pendingTx || pendingTx.merchant_order_id !== orderId) {
+  const pendingTx = donationRepository.getLatestPendingDonation(from.id);
+  if (!pendingTx || pendingTx.order_id !== orderId) {
     await ctx.answerCallbackQuery({
       text: '⚠️ Batas waktu pembayaran (30 menit) telah habis atau pesanan sudah tidak aktif.',
       show_alert: true
     });
     pendingUserUploads.delete(from.id);
-    await ctx.editMessageText(
-      `⚠️ <b>Batas Waktu Pembayaran Habis</b>\n\nPesanan Order ID <code>${orderId}</code> telah kedaluwarsa karena melebihi batas waktu 30 menit.\nSilakan buat pesanan baru via /dukung atau /topup.`,
-      { parse_mode: 'HTML', reply_markup: undefined }
-    ).catch(() => {});
+    await ctx
+      .editMessageText(
+        `⚠️ <b>Batas Waktu Pembayaran Habis</b>\n\nPesanan Order ID <code>${orderId}</code> telah kedaluwarsa karena melebihi batas waktu 30 menit.\nSilakan buat pesanan baru via /dukung.`,
+        { parse_mode: 'HTML', reply_markup: undefined }
+      )
+      .catch(() => {});
     return;
   }
 
-  await ctx.answerCallbackQuery({ text: 'Mengirimkan bukti transfer ke Admin...' });
+  // Simpan proof_file_id langsung ke database donasi
+  donationRepository.attachProof(orderId, upload.fileId);
 
-  const pkg = TOPUP_PACKAGES[pendingTx.package_id];
-  const formattedPrice = new Intl.NumberFormat('id-ID').format(pendingTx.amount);
+  await ctx.answerCallbackQuery({ text: 'Mengirimkan bukti donasi ke Admin...' });
+
+  const formattedPrice = pendingTx.amount > 0
+    ? `Rp ${new Intl.NumberFormat('id-ID').format(pendingTx.amount)}`
+    : 'Sukarela (Bebas)';
+  const title = `Dukungan Sukarela Pengembang`;
 
   const adminKeyboard = new InlineKeyboard()
-    .text('✅ Konfirmasi Pembayaran', `confirm_tx:${pendingTx.merchant_order_id}`)
+    .text('✅ Konfirmasi Donasi', `confirm_tx:${pendingTx.order_id}`)
     .row()
-    .text('❌ Tolak Pembayaran', `reject_tx:${pendingTx.merchant_order_id}`);
+    .text('❌ Tolak Donasi', `reject_tx:${pendingTx.order_id}`);
 
   const adminCaption =
-    `💖 <b>BUKTI DUKUNGAN PENGEMBANGAN (QRIS)</b>\n\n` +
-    `• <b>Order ID:</b> <code>${pendingTx.merchant_order_id}</code>\n` +
+    `💖 <b>BUKTI DUKUNGAN SUKARELA (QRIS)</b>\n\n` +
+    `• <b>Order ID:</b> <code>${pendingTx.order_id}</code>\n` +
     `• <b>User ID:</b> <code>${from.id}</code>\n` +
     `• <b>Nama:</b> ${escapeHtml(from.first_name)} ${escapeHtml(from.last_name || '')}\n` +
     `• <b>Username:</b> @${escapeHtml(from.username || '-')}\n` +
-    `• <b>Paket:</b> ${escapeHtml(pkg ? pkg.name : pendingTx.package_id)} (+${pendingTx.coins} Koin${pkg?.isVipBonus ? ' + VIP 30 Hari' : ''})\n` +
-    `• <b>Tagihan:</b> <b>Rp ${formattedPrice}</b>\n` +
+    `• <b>Keterangan:</b> ${escapeHtml(title)}\n` +
+    `• <b>Nominal:</b> <b>${formattedPrice}</b>\n` +
     `• <b>Waktu:</b> ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}\n\n` +
     `Silakan periksa mutasi rekening/e-wallet Anda, lalu pilih tindakan:`;
 
@@ -143,7 +152,7 @@ vipComposer.callbackQuery(/^send_proof:([A-Za-z0-9_]+)$/, async ctx => {
       });
       sentAdminList.push({ adminId, messageId: sentMsg.message_id, caption: adminCaption });
     } catch (err) {
-      console.error(`Gagal meneruskan bukti transfer ke admin ${adminId}:`, err);
+      console.error(`Gagal meneruskan bukti donasi ke admin ${adminId}:`, err);
     }
   }
 
@@ -154,12 +163,14 @@ vipComposer.callbackQuery(/^send_proof:([A-Za-z0-9_]+)$/, async ctx => {
   pendingUserUploads.delete(from.id);
 
   // Perbarui pesan di ruang obrolan pengguna
-  await ctx.editMessageText(
-    `📩 <b>Bukti transfer untuk Order <code>${orderId}</code> telah berhasil dikirimkan ke Admin!</b>\n\n` +
-    `Admin kami sedang memverifikasi mutasi rekening Anda.\n` +
-    `Benefit paket <b>+${pendingTx.coins} Koin</b> ${pkg?.isVipBonus ? 'dan status VIP ' : ''}akan otomatis aktif segera setelah dikonfirmasi.`,
-    { parse_mode: 'HTML', reply_markup: undefined }
-  ).catch(() => {});
+  await ctx
+    .editMessageText(
+      `📩 <b>Bukti transfer untuk Order <code>${orderId}</code> telah berhasil dikirimkan ke Admin!</b>\n\n` +
+      `Admin kami sedang memverifikasi mutasi rekening Anda.\n` +
+      `Gelar apresiasi <b>💖 Sahabat Dermawan</b> dan bonus EXP keaktifan akan otomatis disematkan setelah dikonfirmasi.`,
+      { parse_mode: 'HTML', reply_markup: undefined }
+    )
+    .catch(() => {});
 });
 
 // Callback Query: Pengguna membatalkan pengiriman bukti foto
@@ -170,7 +181,7 @@ vipComposer.callbackQuery('cancel_proof', async ctx => {
   await ctx.deleteMessage().catch(() => {});
 });
 
-// 1. Callback Query: Admin mengonfirmasi pesanan QRIS Dinamis
+// 1. Callback Query: Admin mengonfirmasi donasi QRIS
 vipComposer.callbackQuery(/^confirm_tx:([A-Za-z0-9_]+)$/, async ctx => {
   const adminId = ctx.from.id;
   if (!config.isAdmin(adminId)) {
@@ -189,8 +200,11 @@ vipComposer.callbackQuery(/^confirm_tx:([A-Za-z0-9_]+)$/, async ctx => {
   const pkg = result.packageInfo!;
   const tx = result.transaction!;
   const updatedUser = result.updatedUser;
+  const formattedPrice = tx.amount > 0 ? `Rp ${new Intl.NumberFormat('id-ID').format(tx.amount)}` : 'Sukarela';
+  const expGained = tx.amount > 0 ? Math.max(50, Math.floor(tx.amount / 100)) : 100;
+  const amountNote = tx.amount > 0 ? ` sebesar <b>${formattedPrice}</b>` : '';
 
-  await ctx.answerCallbackQuery({ text: `Berhasil mengonfirmasi pembayaran untuk ${pkg.name}!` });
+  await ctx.answerCallbackQuery({ text: `Berhasil mengonfirmasi donasi ${formattedPrice}!` });
 
   // Perbarui pesan di obrolan SEMUA admin agar tombol tidak dapat ditekan lagi
   const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
@@ -198,31 +212,34 @@ vipComposer.callbackQuery(/^confirm_tx:([A-Za-z0-9_]+)$/, async ctx => {
 
   if (sentList && sentList.length > 0) {
     for (const item of sentList) {
-      await ctx.api.editMessageCaption(item.adminId, item.messageId, {
-        caption: `${item.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (${escapeHtml(pkg.name)})`,
-        parse_mode: 'HTML',
-        reply_markup: undefined
-      }).catch(() => {});
+      await ctx.api
+        .editMessageCaption(item.adminId, item.messageId, {
+          caption: `${item.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (Donasi ${formattedPrice})`,
+          parse_mode: 'HTML',
+          reply_markup: undefined
+        })
+        .catch(() => {});
     }
     adminOrderMessages.delete(orderId);
   } else {
-    await ctx.editMessageCaption({
-      caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (${escapeHtml(pkg.name)})`,
-      parse_mode: 'HTML',
-      reply_markup: undefined
-    }).catch(() => {});
+    await ctx
+      .editMessageCaption({
+        caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (Donasi ${formattedPrice})`,
+        parse_mode: 'HTML',
+        reply_markup: undefined
+      })
+      .catch(() => {});
   }
 
-  // Kirim notifikasi ucapan selamat & penambahan saldo ke pengguna
+  // Kirim notifikasi ucapan terima kasih tulus ke pengguna
   const userText =
-    `🎉 <b>DUKUNGAN ANDA TELAH DITERIMA & DIVERIFIKASI!</b> 🎉\n\n` +
-    `Terima kasih banyak atas dukungan Anda dalam pengembangan & pemeliharaan tools ini! 🙏\n\n` +
+    `🎉 <b>TERIMA KASIH BANYAK ATAS DUKUNGAN ANDA!</b> 🙏\n\n` +
+    `Dukungan sukarela Anda${amountNote} telah berhasil diverifikasi oleh Admin.\n\n` +
+    `Setiap rezeki yang Anda bagikan sangat berarti untuk membantu kelangsungan operasional & pemeliharaan server bot ini. Semoga berkah dan dilipatgandakan selalu! ✨\n\n` +
     `• <b>Order ID:</b> <code>${orderId}</code>\n` +
-    `• <b>Paket Dukungan:</b> ${escapeHtml(pkg.name)}\n` +
-    `• <b>Benefit Koin:</b> <b>+${pkg.coins} Koin</b>\n` +
-    (pkg.isVipBonus && pkg.vipDays ? `• <b>Status VIP:</b> <b>Aktif ${pkg.vipDays} Hari Bebas Unduh!</b>\n` : '') +
-    `• <b>Saldo Koin Sekarang:</b> 💰 <b>${updatedUser?.coins ?? 0} Koin</b>\n\n` +
-    `Benefit paket telah aktif di akun Anda. Selamat menikmati seluruh fitur bot!`;
+    `• <b>Bonus Keaktifan:</b> ⭐ <b>+${expGained} EXP</b> (Total: ${updatedUser?.exp ?? 0} EXP)\n` +
+    `• <b>Gelar Kehormatan:</b> 💖 <b>Sahabat Dermawan</b> Aktif!\n\n` +
+    `Terima kasih telah menjadi bagian dari pendukung kami!`;
 
   await ctx.api.sendMessage(tx.telegram_id, userText, { parse_mode: 'HTML' }).catch(err => {
     console.error(`Gagal mengirim notifikasi sukses ke user ${tx.telegram_id}:`, err);
@@ -238,10 +255,10 @@ vipComposer.callbackQuery(/^reject_tx:([A-Za-z0-9_]+)$/, async ctx => {
   }
 
   const orderId = ctx.match[1];
-  const tx = transactionRepository.getTransaction(orderId);
+  const tx = donationRepository.getDonation(orderId);
 
   if (!tx) {
-    await ctx.answerCallbackQuery({ text: 'Transaksi tidak ditemukan.', show_alert: true });
+    await ctx.answerCallbackQuery({ text: 'Donasi tidak ditemukan.', show_alert: true });
     return;
   }
 
@@ -258,19 +275,23 @@ vipComposer.callbackQuery(/^reject_tx:([A-Za-z0-9_]+)$/, async ctx => {
 
   if (sentList && sentList.length > 0) {
     for (const item of sentList) {
-      await ctx.api.editMessageCaption(item.adminId, item.messageId, {
-        caption: `${item.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
-        parse_mode: 'HTML',
-        reply_markup: undefined
-      }).catch(() => {});
+      await ctx.api
+        .editMessageCaption(item.adminId, item.messageId, {
+          caption: `${item.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
+          parse_mode: 'HTML',
+          reply_markup: undefined
+        })
+        .catch(() => {});
     }
     adminOrderMessages.delete(orderId);
   } else {
-    await ctx.editMessageCaption({
-      caption: `${ctx.callbackQuery.message?.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
-      parse_mode: 'HTML',
-      reply_markup: undefined
-    }).catch(() => {});
+    await ctx
+      .editMessageCaption({
+        caption: `${ctx.callbackQuery.message?.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
+        parse_mode: 'HTML',
+        reply_markup: undefined
+      })
+      .catch(() => {});
   }
 
   const contact = getAdminContactInfo();
@@ -278,18 +299,20 @@ vipComposer.callbackQuery(/^reject_tx:([A-Za-z0-9_]+)$/, async ctx => {
   if (contact.isAvailable) {
     userKeyboard.url('💬 Hubungi Admin', contact.getContactUrl(`Halo Admin, konfirmasi penolakan Order ID: ${orderId}`));
   }
-  userKeyboard.row().text('🔄 Pesan Paket Ulang', 'topup:menu');
+  userKeyboard.row().text('🔄 Berdonasi Ulang', 'topup:menu');
 
-  await ctx.api.sendMessage(
-    tx.telegram_id,
-    `❌ <b>Pembayaran Ditolak.</b>\n` +
-    `Bukti transfer untuk Order ID <code>${orderId}</code> tidak dapat divalidasi oleh Admin.\n` +
-    `Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi atau buat pesanan ulang via /dukung atau /topup.`,
-    { parse_mode: 'HTML', reply_markup: userKeyboard }
-  ).catch(() => {});
+  await ctx.api
+    .sendMessage(
+      tx.telegram_id,
+      `❌ <b>Konfirmasi Pembayaran Ditolak.</b>\n` +
+      `Bukti transfer untuk Order ID <code>${orderId}</code> tidak dapat divalidasi oleh Admin.\n` +
+      `Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi rekening.`,
+      { parse_mode: 'HTML', reply_markup: userKeyboard }
+    )
+    .catch(() => {});
 });
 
-// 3. Callback Query: Admin mengonfirmasi aktivasi VIP manual
+// 3. Callback Query: Admin mengonfirmasi aktivasi Sahabat Dermawan (VIP) manual
 vipComposer.callbackQuery(/^confirm_vip:(\d+):(\d+)$/, async ctx => {
   const adminId = ctx.from.id;
   if (!config.isAdmin(adminId)) {
@@ -304,23 +327,26 @@ vipComposer.callbackQuery(/^confirm_vip:(\d+):(\d+)$/, async ctx => {
   const success = userRepository.setRole(targetUserId, 'vip', days);
 
   if (success) {
-    await ctx.answerCallbackQuery({ text: `Berhasil mengaktifkan VIP ${days} hari!` });
+    await ctx.answerCallbackQuery({ text: `Berhasil mengaktifkan Sahabat Dermawan ${days} hari!` });
 
     const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
-    await ctx.editMessageCaption({
-      caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (VIP +${days} Hari)`,
-      parse_mode: 'HTML',
-      reply_markup: undefined
-    }).catch(() => {});
+    await ctx
+      .editMessageCaption({
+        caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (Sahabat Dermawan +${days} Hari)`,
+        parse_mode: 'HTML',
+        reply_markup: undefined
+      })
+      .catch(() => {});
 
-    await ctx.api.sendMessage(
-      targetUserId,
-      `🎉 <b>Selamat! Akun Anda Telah Aktif Sebagai VIP!</b>\n\n` +
-      `Masa aktif VIP: <b>${days} Hari</b>\n` +
-      `Nikmati unduhan media sepuasnya tanpa batas harian dan bebas potong koin (GRATIS 0 Koin)!\n\n` +
-      `Terima kasih telah mendukung server kami!`,
-      { parse_mode: 'HTML' }
-    ).catch(() => {});
+    await ctx.api
+      .sendMessage(
+        targetUserId,
+        `🎉 <b>Selamat! Akun Anda Telah Aktif Sebagai 💖 Sahabat Dermawan!</b>\n\n` +
+        `Masa aktif apresiasi: <b>${days} Hari</b>\n` +
+        `Terima kasih banyak atas ketulusan Anda dalam mendukung pengembangan server bot ini! 🙏`,
+        { parse_mode: 'HTML' }
+      )
+      .catch(() => {});
   } else {
     await ctx.answerCallbackQuery({ text: 'Gagal memperbarui status user di database.', show_alert: true });
   }
@@ -338,27 +364,31 @@ vipComposer.callbackQuery(/^reject_vip:(\d+)$/, async ctx => {
   await ctx.answerCallbackQuery({ text: 'Bukti transfer ditolak.' });
 
   const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
-  await ctx.editMessageCaption({
-    caption: `${ctx.callbackQuery.message?.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
-    parse_mode: 'HTML',
-    reply_markup: undefined
-  }).catch(() => {});
+  await ctx
+    .editMessageCaption({
+      caption: `${ctx.callbackQuery.message?.caption}\n\n❌ <b>DITOLAK OLEH ADMIN:</b> ${adminUser}`,
+      parse_mode: 'HTML',
+      reply_markup: undefined
+    })
+    .catch(() => {});
 
   const contact = getAdminContactInfo();
   const rejectKeyboard = new InlineKeyboard();
   if (contact.isAvailable) {
     rejectKeyboard.url('💬 Hubungi Admin', contact.getContactUrl('Halo Admin, konfirmasi penolakan bukti transfer saya'));
   }
-  rejectKeyboard.row().text('🔄 Pesan Paket Ulang', 'topup:menu');
+  rejectKeyboard.row().text('🔄 Berdonasi Ulang', 'topup:menu');
 
-  await ctx.api.sendMessage(
-    targetUserId,
-    `❌ <b>Bukti Pembayaran Ditolak.</b>\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi.`,
-    { parse_mode: 'HTML', reply_markup: rejectKeyboard }
-  ).catch(() => {});
+  await ctx.api
+    .sendMessage(
+      targetUserId,
+      `❌ <b>Bukti Pembayaran Ditolak.</b>\nAdmin tidak dapat memvalidasi struk transfer Anda. Silakan hubungi Admin (<b>${escapeHtml(contact.display)}</b>) jika terdapat kekeliruan mutasi.`,
+      { parse_mode: 'HTML', reply_markup: rejectKeyboard }
+    )
+    .catch(() => {});
 });
 
-// 5. Callback Query: Admin mengonfirmasi penambahan koin manual
+// 5. Callback Query: Admin mengonfirmasi penambahan EXP manual
 vipComposer.callbackQuery(/^confirm_coins:(\d+):(\d+)$/, async ctx => {
   const adminId = ctx.from.id;
   if (!config.isAdmin(adminId)) {
@@ -369,21 +399,25 @@ vipComposer.callbackQuery(/^confirm_coins:(\d+):(\d+)$/, async ctx => {
   const targetUserId = parseInt(ctx.match[1], 10);
   const amount = parseInt(ctx.match[2], 10);
 
-  userRepository.addCoins(targetUserId, amount, Math.floor(amount / 10));
+  userRepository.addExp(targetUserId, amount);
   const updatedUser = userRepository.getUser(targetUserId);
 
-  await ctx.answerCallbackQuery({ text: `Berhasil menambahkan +${amount} Koin!` });
+  await ctx.answerCallbackQuery({ text: `Berhasil menambahkan +${amount} EXP!` });
   const adminUser = escapeHtml(ctx.from.username ? `@${ctx.from.username}` : adminId);
 
-  await ctx.editMessageCaption({
-    caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (+${amount} Koin)`,
-    parse_mode: 'HTML',
-    reply_markup: undefined
-  }).catch(() => {});
+  await ctx
+    .editMessageCaption({
+      caption: `${ctx.callbackQuery.message?.caption}\n\n✅ <b>DIKONFIRMASI OLEH ADMIN:</b> ${adminUser} (+${amount} EXP)`,
+      parse_mode: 'HTML',
+      reply_markup: undefined
+    })
+    .catch(() => {});
 
-  await ctx.api.sendMessage(
-    targetUserId,
-    `🎉 <b>Pembayaran Anda Telah Diverifikasi!</b>\n\nAdmin telah menambahkan <b>+${amount} Koin</b> ke akun Anda.\nSaldo koin Anda sekarang: 💰 <b>${updatedUser?.coins ?? 0} Koin</b>.`,
-    { parse_mode: 'HTML' }
-  ).catch(() => {});
+  await ctx.api
+    .sendMessage(
+      targetUserId,
+      `🎉 <b>EXP Keaktifan Ditambahkan!</b>\n\nAdmin telah menambahkan <b>+${amount} EXP</b> ke akun Anda.\nTotal EXP Anda sekarang: ⭐ <b>${updatedUser?.exp ?? 0} EXP</b>.`,
+      { parse_mode: 'HTML' }
+    )
+    .catch(() => {});
 });

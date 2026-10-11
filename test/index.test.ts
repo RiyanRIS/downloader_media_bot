@@ -6,7 +6,9 @@ import { extractMediaUrl } from '../src/bot/middlewares/urlDetector.js';
 import { detectPlatform, findBestDirectUrl } from '../src/services/downloaderService.js';
 import { photoService } from '../src/services/photoService.js';
 import { systemService } from '../src/services/systemService.js';
-import { transactionRepository } from '../src/database/repositories/transactionRepository.js';
+import { donationRepository } from '../src/database/repositories/donationRepository.js';
+import { feedbackRepository } from '../src/database/repositories/feedbackRepository.js';
+import { renderFeedbackMenu, renderPromptSuggestion, renderPromptBug } from '../src/bot/handlers/feedback.js';
 import { qrisService, DEFAULT_STATIC_QRIS } from '../src/services/qrisService.js';
 import { calculateCRC16, convertQRIS, validateQRIS, parseQRIS } from '../src/services/qris/index.js';
 import { getLevelBadge } from '../src/bot/handlers/game.js';
@@ -215,20 +217,18 @@ async function runTests() {
     const badgeSultan = getLevelBadge(3200);
     assert(badgeSultan.level === 33 && badgeSultan.title === 'Sultan', 'Level badge for 3200 exp is Sultan (Lv.33)');
 
-    // 10. Uji Repository Transaksi & QRIS Dinamis Service
+    // 10. Uji Repository Donasi & QRIS Dinamis Service
     const testOrderId = `TEST_ORDER_${Date.now()}`;
-    const tx = transactionRepository.createTransaction({
+    const tx = donationRepository.createDonation({
       telegramId: testUserId,
-      merchantOrderId: testOrderId,
-      packageId: 'pro',
-      amount: 10000,
-      coins: 500
+      orderId: testOrderId,
+      amount: 10000
     });
-    assert(tx.merchant_order_id === testOrderId, 'Transaction created with PENDING status');
-    assert(tx.status === 'PENDING', 'Initial transaction status is PENDING');
+    assert(tx.order_id === testOrderId, 'Donation created with PENDING status');
+    assert(tx.status === 'PENDING', 'Initial donation status is PENDING');
 
-    const pendingTx = transactionRepository.getLatestPendingTransaction(testUserId);
-    assert(pendingTx?.merchant_order_id === testOrderId, 'getLatestPendingTransaction retrieves latest pending order');
+    const pendingTx = donationRepository.getLatestPendingDonation(testUserId);
+    assert(pendingTx?.order_id === testOrderId, 'getLatestPendingDonation retrieves latest pending order');
 
     // Uji QRIS CRC16 Checksum
     const testCrc = calculateCRC16('00020101021126590014ID.LINKAJA.WWW011893600914383120301702150000000000000000303UMI51440014ID.LINKAJA.WWW02150000000000000000303UMI5204581253033605802ID5913MERCHANT TEST6007JAKARTA61051234062070703A016304');
@@ -252,42 +252,49 @@ async function runTests() {
     assert(Buffer.isBuffer(qrisResult.qrBuffer) && qrisResult.qrBuffer.length > 0, 'createDynamicQrisTransaction produces valid PNG QR buffer');
     assert(qrisResult.packageInfo?.coins === 500, 'Selected package gives 500 coins');
 
-    // Uji Verifikasi Manual oleh Admin (Konfirmasi & Penambahan Koin)
-    const coinsBeforeConfirm = userRepository.getUser(testUserId)!.coins;
+    // Uji Verifikasi Manual oleh Admin (Konfirmasi & Pemberian Badge Sahabat Dermawan)
     const confirmRes = qrisService.confirmPayment(qrisResult.orderId, 123456);
     assert(confirmRes.success === true, 'Admin confirmPayment approves transaction');
-    const coinsAfterConfirm = userRepository.getUser(testUserId)!.coins;
-    assert(coinsAfterConfirm === coinsBeforeConfirm + 500, 'User coins incremented by +500 after admin verification');
+    const confirmedUser = userRepository.getUser(testUserId)!;
+    assert(confirmedUser.role === 'vip', 'User role upgraded to VIP/Sahabat Dermawan after donation confirmation');
 
     // Transaksi yang sudah SUCCESS tidak boleh dikonfirmasi ulang
     const doubleConfirmRes = qrisService.confirmPayment(qrisResult.orderId, 123456);
     assert(doubleConfirmRes.success === false, 'Cannot confirm already processed transaction');
 
-    // Uji Penolakan Transaksi oleh Admin
+    // Uji Penolakan Donasi oleh Admin
     const rejectOrderId = `REJECT_ORDER_${Date.now()}`;
-    transactionRepository.createTransaction({
+    donationRepository.createDonation({
       telegramId: testUserId,
-      merchantOrderId: rejectOrderId,
-      packageId: 'starter',
-      amount: 5000,
-      coins: 200
+      orderId: rejectOrderId,
+      amount: 5000
     });
     const rejectRes = qrisService.rejectPayment(rejectOrderId, 123456);
     assert(rejectRes.success === true, 'Admin rejectPayment marks transaction as REJECTED');
-    const rejectedTx = transactionRepository.getTransaction(rejectOrderId)!;
+    const rejectedTx = donationRepository.getDonation(rejectOrderId)!;
     assert(rejectedTx.status === 'REJECTED', 'Transaction status is REJECTED in database');
 
-    // Uji Batas Waktu 30 Menit Transaksi Pending (Auto-Expire)
+    // Uji Batas Waktu 30 Menit Donasi Pending (Auto-Expire)
     const expiredOrderId = `EXP_ORDER_${Date.now()}`;
     db.prepare(`
-      INSERT INTO transactions_log (telegram_id, merchant_order_id, reference, package_id, amount, coins, status, created_at)
-      VALUES (?, ?, NULL, 'starter', 5000, 200, 'PENDING', DATETIME('now', '-35 minutes'))
+      INSERT INTO donations (telegram_id, order_id, amount, status, created_at)
+      VALUES (?, ?, 5000, 'PENDING', DATETIME('now', 'localtime', '-35 minutes'))
     `).run(testUserId, expiredOrderId);
 
-    const expiredPendingCheck = transactionRepository.getLatestPendingTransaction(testUserId);
+    const expiredPendingCheck = donationRepository.getLatestPendingDonation(testUserId);
     assert(expiredPendingCheck === null, 'getLatestPendingTransaction returns null for order older than 30 minutes');
-    const checkedExpTx = transactionRepository.getTransaction(expiredOrderId)!;
-    assert(checkedExpTx.status === 'EXPIRED', 'Order older than 30 minutes auto-updated to EXPIRED status');
+    const checkedExpTx = donationRepository.getDonation(expiredOrderId)!;
+    assert(checkedExpTx.status === 'REJECTED', 'Order older than 30 minutes auto-updated to REJECTED status');
+
+    // Uji Daftar Donatur Bulan Ini (Tanpa Nominal)
+    const monthlyDonors = donationRepository.getMonthlyDonors();
+    assert(Array.isArray(monthlyDonors), 'getMonthlyDonors returns an array');
+    assert(monthlyDonors.some(d => d.telegram_id === testUserId), 'Confirmed test donor is included in monthly donors list');
+
+    const { renderDonorsList } = await import('../src/bot/handlers/topup.js');
+    const renderedDonors = renderDonorsList();
+    assert(renderedDonors.text.includes('DAFTAR DONATUR BULAN INI'), 'renderDonorsList header is present');
+    assert(!renderedDonors.text.includes('Rp '), 'renderDonorsList does not display donation nominal (tanpa nominal)');
 
     // Uji Kuis Dataset
     const sampleQuiz = (await import('../src/games/quizData.js')).getRandomQuiz();
@@ -356,6 +363,68 @@ async function runTests() {
     assert(mockSession.board[0] === null, 'Indeks 0 menjadi kosong kembali');
     assert(mockSession.board[4] === 'X', 'Indeks 4 terisi bidak baru X');
     assert(mockSession.historyX.length === 3, 'Jumlah bidak tetap maksimal 3');
+
+    // 12. Uji Fitur Request Fitur & Lapor Kendala (Feedback Repository & UI)
+    const testSaran = feedbackRepository.createFeedback({
+      telegramId: testUserId,
+      userName: '@test_user',
+      type: 'suggestion',
+      content: 'Tolong tambahkan fitur unduh album foto dari Pinterest'
+    });
+    assert(typeof testSaran.id === 'number' && testSaran.id > 0, 'Create feedback suggestion returns valid ID');
+    assert(testSaran.type === 'suggestion', 'Feedback type is suggestion');
+    assert(testSaran.status === 'PENDING', 'Initial feedback status is PENDING');
+
+    const testBug = feedbackRepository.createFeedback({
+      telegramId: testUserId,
+      userName: '@test_user',
+      type: 'bug',
+      content: 'Link YouTube Shorts mengalami error 403 saat diunduh'
+    });
+    assert(testBug.type === 'bug', 'Feedback type is bug');
+    assert(testBug.status === 'PENDING', 'Initial bug report status is PENDING');
+
+    const fetchedFb = feedbackRepository.getFeedbackById(testSaran.id);
+    assert(fetchedFb !== null && fetchedFb.content === testSaran.content, 'getFeedbackById returns correct record');
+
+    const markReadSuccess = feedbackRepository.updateStatus(testSaran.id, 'READ');
+    assert(markReadSuccess === true, 'updateStatus to READ succeeds');
+    assert(feedbackRepository.getFeedbackById(testSaran.id)?.status === 'READ', 'Feedback status updated to READ');
+
+    const markResolveSuccess = feedbackRepository.updateStatus(testBug.id, 'RESOLVED');
+    assert(markResolveSuccess === true, 'updateStatus to RESOLVED succeeds');
+    const resolvedBug = feedbackRepository.getFeedbackById(testBug.id);
+    assert(resolvedBug?.status === 'RESOLVED', 'Feedback status updated to RESOLVED');
+    assert(resolvedBug?.resolved_at !== null, 'resolved_at timestamp is populated');
+
+    const replySuccess = feedbackRepository.saveAdminReply(testSaran.id, 'Terima kasih idenya, akan dipertimbangkan!', 123456);
+    assert(replySuccess === true, 'saveAdminReply succeeds');
+    const repliedFb = feedbackRepository.getFeedbackById(testSaran.id);
+    assert(repliedFb?.admin_reply === 'Terima kasih idenya, akan dipertimbangkan!', 'Admin reply is saved');
+    assert(repliedFb?.replied_by === 123456, 'Admin ID is recorded');
+    assert(repliedFb?.status === 'RESOLVED', 'Status changed to RESOLVED after admin reply');
+
+    const stats = feedbackRepository.getStats();
+    assert(stats.total >= 2, 'Feedback stats total reflects test entries');
+    assert(stats.suggestions >= 1, 'Feedback stats suggestions count is accurate');
+    assert(stats.bugs >= 1, 'Feedback stats bugs count is accurate');
+
+    const recentFeedbacks = feedbackRepository.getRecentFeedbacks(10);
+    assert(Array.isArray(recentFeedbacks) && recentFeedbacks.length >= 2, 'getRecentFeedbacks returns array of feedbacks');
+
+    const menuRender = renderFeedbackMenu();
+    assert(menuRender.text.includes('Request Fitur & Lapor Kendala'), 'renderFeedbackMenu includes correct title');
+
+    const promptSaranRender = renderPromptSuggestion();
+    assert(promptSaranRender.text.includes('Request Fitur & Ide Saran'), 'renderPromptSuggestion includes suggestion header');
+
+    const promptBugRender = renderPromptBug();
+    assert(promptBugRender.text.includes('Laporkan Kendala atau Fitur Rusak'), 'renderPromptBug includes bug header');
+
+    // Bersihkan data uji feedback
+    feedbackRepository.deleteFeedback(testSaran.id);
+    feedbackRepository.deleteFeedback(testBug.id);
+    assert(feedbackRepository.getFeedbackById(testSaran.id) === null, 'deleteFeedback removes record cleanly');
 
     console.log(`\n🏁 Hasil Uji: ${passed} Passed, ${failed} Failed.`);
   } catch (err) {

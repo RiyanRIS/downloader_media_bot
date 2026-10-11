@@ -112,7 +112,7 @@ export const systemService = {
     if (process.platform !== 'linux') {
       return {
         success: true,
-        message: 'ℹ️ Mode Dev (Windows/Non-Linux): Pembersihan drop_caches hanya dieksekusi di Linux STB.'
+        message: 'ℹ️ Mode Dev (Windows/Non-Linux): Pembersihan drop_caches hanya dieksekusi di Linux server.'
       };
     }
 
@@ -120,7 +120,7 @@ export const systemService = {
       await execAsync('sync && echo 3 | sudo tee /proc/sys/vm/drop_caches');
       return {
         success: true,
-        message: '✅ Berhasil melegakan RAM STB (drop_caches executed).'
+        message: '✅ Berhasil melegakan RAM server (drop_caches executed).'
       };
     } catch (err: any) {
       return {
@@ -131,7 +131,7 @@ export const systemService = {
   },
 
   /**
-   * Me-restart perangkat STB (Safe Reboot)
+   * Me-restart perangkat Server (Safe Reboot)
    */
   async reboot(): Promise<{ success: boolean; message: string }> {
     if (process.platform !== 'linux') {
@@ -149,18 +149,18 @@ export const systemService = {
 
       return {
         success: true,
-        message: '🔄 STB sedang di-reboot. Bot akan offline sementara selama 1-2 menit...'
+        message: '🔄 Server sedang di-reboot. Bot akan offline sementara selama 1-2 menit...'
       };
     } catch (err: any) {
       return {
         success: false,
-        message: `❌ Gagal me-reboot STB: ${err.message}`
+        message: `❌ Gagal me-reboot server: ${err.message}`
       };
     }
   },
 
   /**
-   * Uji kecepatan unduh sederhana untuk STB
+   * Uji kecepatan unduh sederhana untuk Server
    */
   async runSimpleSpeedtest(): Promise<string> {
     const startTime = Date.now();
@@ -182,7 +182,7 @@ export const systemService = {
       const sizeMb = buffer.byteLength / (1024 * 1024);
       const speedMbps = (sizeMb * 8) / durationSec;
 
-      return `🚀 **Hasil Uji Kecepatan STB:**\n` +
+      return `🚀 **Hasil Uji Kecepatan Server:**\n` +
              `• Ukuran Uji: 10 MB\n` +
              `• Waktu Tempuh: ${durationSec.toFixed(2)} detik\n` +
              `• Estimasi Speed: **${speedMbps.toFixed(2)} Mbps**`;

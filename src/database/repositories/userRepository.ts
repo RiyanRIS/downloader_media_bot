@@ -138,7 +138,20 @@ export const userRepository = {
     return rows.map(r => r.telegram_id);
   },
 
-  // === MODUL GAMES & SISTEM KOIN ===
+  // === MODUL EXP KEAKTIFAN & GAMES ===
+
+  addExp(telegramId: number, expAmount: number): void {
+    db.prepare(`
+      UPDATE users 
+      SET exp = exp + ? 
+      WHERE telegram_id = ?
+    `).run(expAmount, telegramId);
+  },
+
+  setExp(telegramId: number, amount: number): boolean {
+    const info = db.prepare('UPDATE users SET exp = ? WHERE telegram_id = ?').run(Math.max(0, amount), telegramId);
+    return info.changes > 0;
+  },
 
   addCoins(telegramId: number, amount: number, expAmount = 0): void {
     db.prepare(`
@@ -168,31 +181,34 @@ export const userRepository = {
     `).run(isWin ? 1 : 0, coinDelta, expDelta, telegramId);
   },
 
-  claimDailyBonus(telegramId: number, bonusCoins = 50): { success: boolean; currentCoins: number; message: string } {
+  claimDailyBonus(telegramId: number, bonusExp = 20): { success: boolean; currentExp: number; currentCoins: number; message: string } {
     const user = this.getUser(telegramId);
     if (!user) {
-      return { success: false, currentCoins: 0, message: 'User tidak ditemukan.' };
+      return { success: false, currentExp: 0, currentCoins: 0, message: 'User tidak ditemukan.' };
     }
 
     const todayStr = new Date().toISOString().slice(0, 10); // Format YYYY-MM-DD
     if (user.last_daily_claim === todayStr) {
       return {
         success: false,
+        currentExp: user.exp,
         currentCoins: user.coins,
-        message: 'Anda sudah mengklaim bonus harian hari ini. Silakan kembali besok!'
+        message: 'Anda sudah melakukan check-in harian hari ini. Silakan kembali besok!'
       };
     }
 
     db.prepare(`
       UPDATE users 
-      SET coins = coins + ?, exp = exp + 10, last_daily_claim = ? 
+      SET exp = exp + ?, last_daily_claim = ? 
       WHERE telegram_id = ?
-    `).run(bonusCoins, todayStr, telegramId);
+    `).run(bonusExp, todayStr, telegramId);
 
+    const updated = this.getUser(telegramId)!;
     return {
       success: true,
-      currentCoins: user.coins + bonusCoins,
-      message: `🎉 Berhasil mengklaim bonus harian sebesar **+${bonusCoins} koin** dan **+10 EXP**!`
+      currentExp: updated.exp,
+      currentCoins: updated.coins,
+      message: `🎉 Berhasil melakukan check-in harian! Anda mendapatkan **+${bonusExp} EXP** keaktifan!`
     };
   },
 
