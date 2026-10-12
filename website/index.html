@@ -113,7 +113,7 @@
             "name": "Apakah file video disimpan di server bot?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Tidak. Bot kami menggunakan arsitektur Zero-Persistence di mana berkas hanya diproses sementara di memori RAM dan langsung dihapus secara permanen seketika setelah terkirim ke pengguna."
+              "text": "Tidak. Seluruh berkas hanya diproses sementara dan langsung dihapus secara permanen seketika setelah terkirim ke pengguna demi menjaga privasi Anda."
             }
           },
           {
@@ -121,7 +121,7 @@
             "name": "Bagaimana cara mendukung kelangsungan bot?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Pengguna dapat menyalurkan donasi sukarela melalui perintah /dukung via QRIS Dinamis dengan nominal bebas. Para donatur diapresiasi dengan gelar kehormatan Sahabat Dermawan dan dicatat di daftar donatur bulanan (/donatur) tanpa menampilkan nominal donasi."
+              "text": "Pengguna dapat menyalurkan donasi sukarela melalui perintah /dukung via QRIS Dinamis dengan nominal bebas. Para donatur diapresiasi dan dicatat di daftar donatur bulanan (/donatur) tanpa menampilkan nominal donasi."
             }
           }
         ]
@@ -194,41 +194,28 @@
       <div class="docs-nav navbar p-0">
         <ul class="section-items list-unstyled nav flex-column w-100">
           <li class="nav-item section-title"><span class="section-title-label"><i
-                class="fas fa-compass text-primary"></i> Informasi Dasar</span></li>
+                class="fas fa-compass text-primary"></i> Panduan Fitur</span></li>
           <li class="nav-item"><a class="nav-link" href="#item-intro"><i
                 class="fa-solid fa-wand-magic-sparkles fa-fw"></i> Pengenalan Bot</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-status"><i class="fa-solid fa-server fa-fw"></i>
-              Status &amp; Server</a></li>
-
-          <li class="nav-item section-title mt-3"><span class="section-title-label"><i
-                class="fas fa-book-open text-primary"></i> Panduan Fitur</span></li>
           <li class="nav-item"><a class="nav-link" href="#item-downloader"><i class="fa-solid fa-download fa-fw"></i>
-              Download Media (Gratis)</a></li>
+              Download Media</a></li>
           <li class="nav-item"><a class="nav-link" href="#item-expense"><i class="fa-solid fa-wallet fa-fw"></i> Catat
               Keuangan AI</a></li>
           <li class="nav-item"><a class="nav-link" href="#item-feedback"><i class="fa-solid fa-comments fa-fw"></i>
               Request Fitur &amp; Lapor</a></li>
           <li class="nav-item"><a class="nav-link" href="#item-games"><i class="fa-solid fa-gamepad fa-fw"></i>
               Mini-Games &amp; PvP</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-economy"><i class="fa-solid fa-star fa-fw"></i> Level
-              &amp; EXP Keaktifan</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-topup"><i class="fa-solid fa-hand-holding-heart fa-fw"></i>
-              Donasi QRIS &amp; Donatur</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-vip"><i class="fa-solid fa-crown fa-fw"></i> Sahabat
-              Dermawan</a></li>
 
           <li class="nav-item section-title mt-3"><span class="section-title-label"><i
-                class="fas fa-terminal text-primary"></i> Cheatsheet &amp; Legal</span></li>
+                class="fas fa-terminal text-primary"></i> Referensi &amp; Bantuan</span></li>
+          <li class="nav-item"><a class="nav-link" href="#item-economy"><i class="fa-solid fa-star fa-fw"></i> Level
+              &amp; EXP Keaktifan</a></li>
           <li class="nav-item"><a class="nav-link" href="#item-cheatsheet"><i class="fa-solid fa-list-check fa-fw"></i>
               Daftar Perintah</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-rules"><i class="fa-solid fa-gavel fa-fw"></i> Aturan
-              Penggunaan</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-legal"><i class="fa-solid fa-shield-halved fa-fw"></i>
-              Disclaimer &amp; ToS</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-faq"><i class="fa-solid fa-circle-question fa-fw"></i>
-              Tanya Jawab (FAQ)</a></li>
-          <li class="nav-item"><a class="nav-link" href="#item-contact"><i
-                class="fa-solid fa-envelope-open-text fa-fw"></i> Bantuan &amp; Kontak</a></li>
+          <li class="nav-item"><a class="nav-link" href="#item-topup"><i class="fa-solid fa-hand-holding-heart fa-fw"></i>
+              Dukungan Donasi</a></li>
+          <li class="nav-item"><a class="nav-link" href="#item-rules"><i class="fa-solid fa-shield-halved fa-fw"></i>
+              Ketentuan &amp; Bantuan</a></li>
         </ul>
       </div>
     </nav>
@@ -270,69 +257,14 @@
 
             <div class="pt-2 border-top border-light">
               <span class="hero-feature-pill"><i class="fa-solid fa-heart text-danger"></i> 100% Gratis Selamanya</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-calendar-check text-info"></i> Check-in Harian +20 EXP</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> TikTok No Watermark</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> YouTube to MP3</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> IG Reels &amp; Album Carousel</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> AI Gemini OCR Struk</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> Tic Tac Toe 3-Bidak (Anti-Draw)</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-check text-success"></i> Request Fitur &amp; Lapor Bug</span>
-              <span class="hero-feature-pill"><i class="fa-solid fa-shield-halved text-primary"></i> Zero-Persistence</span>
-            </div>
-          </div>
-
-          <div class="row g-3">
-            <div class="col-md-6">
-              <div class="card h-100 border p-3 rounded-3 shadow-none">
-                <h3 class="h6 fw-bold mb-2"><i class="fa-solid fa-user-shield text-primary me-2"></i> Pengembang &amp; Tim Admin</h3>
-                <p class="small text-muted mb-1">
-                  Dikelola dan dipelihara oleh <strong>Riyan Ris</strong>. Terbuka untuk kritik, saran ide baru, serta pelaporan bug langsung melalui fitur bot atau chat admin.
-                </p>
-                <div class="mt-2">
-                  <a target="_blank" href="https://t.me/kodokkayang"
-                    class="btn btn-sm btn-outline-primary rounded-pill">
-                    <i class="fa-brands fa-telegram me-1"></i> Kontak Admin (@kodokkayang)
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="card h-100 border p-3 rounded-3 shadow-none">
-                <h3 class="h6 fw-bold mb-2"><i class="fa-solid fa-link text-primary me-2"></i> Tautan Cepat Bot</h3>
-                <ul class="list-unstyled small mb-0">
-                  <li class="mb-1"><strong>Username Bot:</strong> <a target="_blank"
-                      href="https://t.me/ivy_your_assistant_bot">@ivy_your_assistant_bot</a></li>
-                  <li class="mb-1"><strong>Model Navigasi:</strong> Tombol interaktif (Button-First) &amp; perintah
-                    (<code>/</code>)</li>
-                  <li><strong>Akses Fleksibel:</strong> Obrolan pribadi &amp; obrolan grup keluarga/komunitas</li>
-                </ul>
-              </div>
+              <span class="hero-feature-pill"><i class="fa-solid fa-download text-success"></i> Multi-Platform No Watermark</span>
+              <span class="hero-feature-pill"><i class="fa-solid fa-wallet text-info"></i> Catat Keuangan AI Gemini</span>
+              <span class="hero-feature-pill"><i class="fa-solid fa-gamepad text-warning"></i> Mini-Games &amp; Komunitas</span>
             </div>
           </div>
         </header>
 
-        <!-- 2. Status Bot & Server -->
-        <section class="docs-section" id="item-status">
-          <h2 class="section-heading"><i class="fa-solid fa-server"></i> Status Bot &amp; Ketersediaan Server</h2>
-
-          <div class="callout-block callout-block-success">
-            <div class="callout-title">
-              <i class="fa-solid fa-circle-check"></i> Status Operasional: ONLINE 24/7
-            </div>
-            <p class="mb-0 small">
-              Bot saat ini aktif melayani unduhan media, pencatatan keuangan AI, dan game secara stabil 24 jam sehari.
-            </p>
-          </div>
-
-          <p>Ketentuan saat menggunakan bot:</p>
-          <ol class="small">
-            <li>Jika bot berstatus <strong>Online</strong>, permintaan Anda akan langsung diproses dalam hitungan detik.</li>
-            <li>Jika pesan Anda belum direspons, sistem proteksi anti-spam membatasi pengiriman terlalu cepat (<em>cooldown 2.5 detik</em>).</li>
-            <li>Unduhan media diproses antrean tertib (<em>p-limit</em>) untuk menjaga efisiensi bandwidth server dan menghindari OOM.</li>
-          </ol>
-        </section>
-
-        <!-- 3. Fitur Downloader Media -->
+        <!-- 2. Fitur Downloader Media -->
         <section class="docs-section" id="item-downloader">
           <h2 class="section-heading"><i class="fa-solid fa-download"></i> Fitur Unduh Media Multi-Platform (100% Gratis)</h2>
           <p>
@@ -352,7 +284,7 @@
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-youtube text-danger"></i> YouTube</span></td>
                   <td>Video (720p / 360p) atau Audio MP3</td>
-                  <td>Pilihan unduh audio berkualitas tinggi &amp; pre-check 50MB</td>
+                  <td>Pilihan video jernih atau format audio MP3</td>
                 </tr>
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-tiktok text-dark"></i> TikTok</span></td>
@@ -367,22 +299,22 @@
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-x-twitter text-dark"></i> X / Twitter</span></td>
                   <td>Video MP4, Audio &amp; Gambar</td>
-                  <td>Ekstraksi multi-image dan video resolusi optimal</td>
+                  <td>Unduh video &amp; kumpulan foto kualitas HD</td>
                 </tr>
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-threads text-dark"></i> Threads</span></td>
                   <td>Video &amp; Galeri Foto</td>
-                  <td>Ekstraksi media instan dari postingan Threads</td>
+                  <td>Unduh video &amp; galeri foto dari postingan Threads</td>
                 </tr>
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-facebook text-primary"></i> Facebook</span></td>
                   <td>Video Publik &amp; Facebook Reels</td>
-                  <td>Normalisasi canonical URL otomatis</td>
+                  <td>Mendukung semua link video &amp; Facebook Reels</td>
                 </tr>
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-reddit text-warning"></i> Reddit</span></td>
                   <td>Video dengan audio tergabung</td>
-                  <td>Audio dan video digabung mulus via FFmpeg</td>
+                  <td>Video dengan audio otomatis tergabung sempurna</td>
                 </tr>
                 <tr>
                   <td><span class="platform-badge"><i class="fa-brands fa-pinterest text-danger"></i> Pinterest</span></td>
@@ -398,30 +330,18 @@
             </table>
           </div>
 
-          <div class="callout-block callout-block-success">
-            <div class="callout-title">
-              <i class="fa-solid fa-gift"></i> Bebas Biaya &amp; Reward EXP
-            </div>
-            <p class="mb-0 small">
-              Setiap kali Anda mengunduh media, akun Anda otomatis mendapatkan <strong>+2 EXP keaktifan</strong> tanpa potongan koin apa pun! Kumpulkan EXP untuk menaikkan level di <span class="cmd-badge">/leaderboard</span>.
-            </p>
-          </div>
-
-          <div class="callout-block callout-block-info">
-            <div class="callout-title">
-              <i class="fa-solid fa-circle-info"></i> Kebijakan Batas File Telegram 50MB
-            </div>
-            <p class="mb-0 small">
-              Telegram Bot API membatasi unggahan berkas maksimal <strong>50MB</strong>. Jika video yang Anda unduh melebihi batas tersebut, bot akan menyediakan opsi <strong>🎧 Unduh Audio MP3 Saja</strong> agar Anda tetap dapat menikmati isinya.
+          <div class="callout-block callout-block-success mt-3">
+            <p class="small mb-0">
+              <i class="fa-solid fa-gift text-success me-2"></i> <strong>Gratis &amp; Dapatkan +2 EXP</strong> setiap unduhan berhasil! <em>Catatan:</em> Jika ukuran video melebihi batas pengiriman Telegram (50MB), bot otomatis menyediakan opsi <strong>🎧 Unduh Audio MP3 Saja</strong> agar tetap dapat Anda nikmati.
             </p>
           </div>
         </section>
 
-        <!-- 4. Fitur Catat Keuangan Cerdas AI -->
+        <!-- 3. Fitur Catat Keuangan Cerdas AI -->
         <section class="docs-section" id="item-expense">
           <h2 class="section-heading"><i class="fa-solid fa-wallet"></i> Catat Keuangan Cerdas (AI Gemini)</h2>
           <p>
-            Kelola dompet dan pembukuan keluarga tanpa repot. Didukung teknologi <strong>Google Gemini Flash</strong>, bot dapat memahami cerita belanja sehari-hari maupun memindai foto struk belanja secara otomatis — <strong>100% gratis tanpa potongan koin</strong>!
+            Kelola dompet dan pembukuan keluarga tanpa repot. Didukung teknologi <strong>Kecerdasan Buatan (AI)</strong> pintar, bot dapat memahami cerita belanja sehari-hari maupun memindai foto struk belanja secara otomatis — <strong>100% gratis tanpa biaya</strong>!
           </p>
 
           <div class="row g-3 my-2">
@@ -446,7 +366,7 @@
             <div class="col-md-6">
               <div class="card border rounded-3 p-3 h-100 shadow-none">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-1 mb-2">
-                  <h3 class="h6 fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i> 2. Scan Foto Struk (OCR AI)</h3>
+                  <h3 class="h6 fw-bold mb-0"><i class="fa-solid fa-receipt text-primary me-2"></i> 2. Scan Foto Struk (AI Cerdas)</h3>
                   <span class="badge bg-success" style="font-size: 0.72rem;">Gratis (+5 EXP)</span>
                 </div>
                 <p class="small text-muted">
@@ -456,7 +376,7 @@
                   Ketik /struk lalu kirim foto struk belanja Indomaret / Alfamart / SPBU
                 </div>
                 <p class="small text-muted mb-0">
-                  AI memindai total nominal, nama merchant, dan detail barang belanjaan secara instan langsung dari memori tanpa menyimpan foto di disk.
+                  AI memindai total nominal belanja, nama toko, dan detail barang belanjaan secara instan &amp; aman tanpa menyimpan foto di server.
                 </p>
               </div>
             </div>
@@ -472,7 +392,7 @@
           </div>
         </section>
 
-        <!-- 5. Request Fitur & Lapor Kendala (BARU) -->
+        <!-- 4. Request Fitur & Lapor Kendala -->
         <section class="docs-section" id="item-feedback">
           <h2 class="section-heading"><i class="fa-solid fa-comments"></i> Request Fitur &amp; Lapor Kendala (Komunitas)</h2>
           <p>
@@ -515,32 +435,14 @@
             </div>
           </div>
 
-          <div class="card border rounded-3 p-3 shadow-none bg-light">
-            <h4 class="h6 fw-bold mb-2"><i class="fa-solid fa-paper-plane text-primary me-2"></i> Respons Interaktif dari Pengembang</h4>
-            <p class="small text-muted mb-2">
-              Setiap kali Anda mengirimkan masukan, pesan Anda langsung masuk ke panel developer Telegram. Anda akan mendapatkan tanggapan nyata:
+          <div class="callout-block callout-block-info mt-3">
+            <p class="small mb-0">
+              <i class="fa-solid fa-paper-plane text-primary me-2"></i> Setiap masukan langsung masuk ke panel developer Telegram. Anda akan mendapatkan notifikasi saat saran/laporan dibaca, diperbaiki, atau dibalas langsung.
             </p>
-            <div class="row g-2 small">
-              <div class="col-md-4">
-                <div class="p-2 border rounded bg-white">
-                  <strong>👀 Notifikasi Dibaca:</strong> Pemberitahuan santun saat developer telah membaca masukan Anda.
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="p-2 border rounded bg-white">
-                  <strong>✅ Notifikasi Beres:</strong> Pemberitahuan saat kendala/bug yang dilaporkan telah berhasil diperbaiki.
-                </div>
-              </div>
-              <div class="col-md-4">
-                <div class="p-2 border rounded bg-white">
-                  <strong>💬 Balasan Langsung:</strong> Developer dapat mengirimkan balasan teks resmi langsung ke chat Telegram Anda!
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 
-        <!-- 6. Fitur Mini-Games -->
+        <!-- 5. Fitur Mini-Games -->
         <section class="docs-section" id="item-games">
           <h2 class="section-heading"><i class="fa-solid fa-gamepad"></i> Arena Mini-Games &amp; Hiburan</h2>
           <p>
@@ -552,7 +454,7 @@
               <div class="game-card">
                 <i class="fa-solid fa-xmark text-danger fa-2x mb-2"></i>
                 <h3 class="h6 fw-bold mb-1">Tic Tac Toe 3-Bidak</h3>
-                <p class="small text-muted mb-2">Aturan modern FIFO (menaruh bidak ke-4 menghapus bidak pertama). Bebas seri!</p>
+                <p class="small text-muted mb-2">Aturan 3-bidak (menaruh bidak ke-4 menghapus bidak terlama Anda). Bebas seri!</p>
                 <span class="cmd-badge">/ttt (Solo &amp; PvP)</span>
               </div>
             </div>
@@ -599,7 +501,7 @@
           </div>
         </section>
 
-        <!-- 7. Sistem Level & EXP Keaktifan -->
+        <!-- 6. Sistem Level & EXP Keaktifan -->
         <section class="docs-section" id="item-economy">
           <h2 class="section-heading"><i class="fa-solid fa-star"></i> Sistem Level &amp; EXP Keaktifan Komunitas</h2>
           <p>
@@ -634,7 +536,7 @@
                 <tr>
                   <td><i class="fa-solid fa-receipt text-warning me-2"></i> <strong>Scan Foto Struk Belanja</strong></td>
                   <td><span class="badge bg-warning text-dark">+5 EXP</span></td>
-                  <td>Diberikan saat AI Vision memproses nota belanja</td>
+                  <td>Diberikan saat AI berhasil membaca foto nota belanja</td>
                 </tr>
                 <tr>
                   <td><i class="fa-solid fa-users text-warning me-2"></i> <strong>Tebakan Benar Family 100</strong></td>
@@ -660,142 +562,14 @@
             </table>
           </div>
 
-          <!-- Tingkatan Pangkat Level -->
-          <h3 class="h6 fw-bold mt-4 mb-2"><i class="fa-solid fa-award text-warning me-2"></i> 5 Jenjang Pangkat Level Pengguna</h3>
-          <p class="small text-muted mb-3">
-            Setiap kelipatan 100 EXP otomatis menaikkan 1 level: <code>Level = Math.floor(EXP / 100) + 1</code>.
-          </p>
-
-          <div class="row g-2 mb-4">
-            <div class="col-6 col-md">
-              <div class="rank-tier-card">
-                <div class="fs-4 mb-1">🌱</div>
-                <div class="fw-bold small">Pemula</div>
-                <div class="text-muted" style="font-size: 0.78rem;">Level 1 – 4</div>
-                <div class="badge bg-light text-muted border mt-2" style="font-size: 0.7rem;">0 – 499 EXP</div>
-              </div>
-            </div>
-            <div class="col-6 col-md">
-              <div class="rank-tier-card">
-                <div class="fs-4 mb-1">⚔️</div>
-                <div class="fw-bold small">Petualang</div>
-                <div class="text-muted" style="font-size: 0.78rem;">Level 5 – 14</div>
-                <div class="badge bg-light text-muted border mt-2" style="font-size: 0.7rem;">500 – 1.499 EXP</div>
-              </div>
-            </div>
-            <div class="col-6 col-md">
-              <div class="rank-tier-card">
-                <div class="fs-4 mb-1">🛡️</div>
-                <div class="fw-bold small">Pendekar</div>
-                <div class="text-muted" style="font-size: 0.78rem;">Level 15 – 29</div>
-                <div class="badge bg-light text-muted border mt-2" style="font-size: 0.7rem;">1.500 – 2.999 EXP</div>
-              </div>
-            </div>
-            <div class="col-6 col-md">
-              <div class="rank-tier-card">
-                <div class="fs-4 mb-1">👑</div>
-                <div class="fw-bold small">Sultan</div>
-                <div class="text-muted" style="font-size: 0.78rem;">Level 30 – 49</div>
-                <div class="badge bg-warning text-dark border mt-2" style="font-size: 0.7rem;">3.000 – 4.999 EXP</div>
-              </div>
-            </div>
-            <div class="col-6 col-md">
-              <div class="rank-tier-card">
-                <div class="fs-4 mb-1">⚡</div>
-                <div class="fw-bold small">Legenda</div>
-                <div class="text-muted" style="font-size: 0.78rem;">Level 50+</div>
-                <div class="badge bg-primary border mt-2" style="font-size: 0.7rem;">5.000+ EXP</div>
-              </div>
-            </div>
+          <div class="callout-block callout-block-info mt-3">
+            <p class="small mb-0">
+              <i class="fa-solid fa-award text-warning me-2"></i> <strong>Jenjang Pangkat Level:</strong> 🌱 Pemula (Lv.1–4) &bull; ⚔️ Petualang (Lv.5–14) &bull; 🛡️ Pendekar (Lv.15–29) &bull; 👑 Sultan (Lv.30–49) &bull; ⚡ Legenda (Lv.50+). Naik level otomatis setiap 100 EXP! Cek peringkat di <span class="cmd-badge">/leaderboard</span>.
+            </p>
           </div>
         </section>
 
-        <!-- 8. Dukungan Sukarela QRIS & Donatur -->
-        <section class="docs-section" id="item-topup">
-          <h2 class="section-heading"><i class="fa-solid fa-hand-holding-heart"></i> Dukungan Sukarela Pengembang (QRIS) &amp; Daftar Donatur</h2>
-          <p>
-            Bot ini beroperasi secara mandiri tanpa membebankan tarif langganan kepada siapa pun. Untuk membantu menutup biaya operasional server dan pemeliharaan tools, kami membuka saluran <strong>donasi sukarela via QRIS</strong>:
-          </p>
-
-          <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <div class="card border rounded-3 p-3 h-100 shadow-none">
-                <h3 class="h6 fw-bold mb-2 text-primary"><i class="fa-solid fa-qrcode me-2"></i> Cara Berdonasi Sukarela</h3>
-                <ol class="small text-muted mb-0 ps-3">
-                  <li class="mb-1">Ketik <span class="cmd-badge">/dukung</span> atau <span class="cmd-badge">/donasi</span> di bot.</li>
-                  <li class="mb-1">Pindai kode <strong>QRIS Dinamis</strong> menggunakan m-Banking atau e-Wallet (BCA, Mandiri, BRI, Dana, GoPay, OVO, ShopeePay, dll).</li>
-                  <li class="mb-1">Nominal donasi bersifat bebas dan sukarela.</li>
-                  <li>Kirim foto bukti transfer ke bot untuk verifikasi instan.</li>
-                </ol>
-              </div>
-            </div>
-
-            <div class="col-md-6">
-              <div class="card border rounded-3 p-3 h-100 shadow-none">
-                <h3 class="h6 fw-bold mb-2 text-success"><i class="fa-solid fa-users-viewfinder me-2"></i> Daftar Donatur Bulan Ini (<span class="cmd-badge">/donatur</span>)</h3>
-                <p class="small text-muted mb-2">
-                  Sebagai bentuk transparansi dan apresiasi, seluruh donatur bulan berjalan dicatat dalam daftar kehormatan:
-                </p>
-                <ul class="small text-muted mb-0 ps-3">
-                  <li class="mb-1">Mendapatkan gelar kehormatan <strong>💖 Sahabat Dermawan</strong> (Role VIP).</li>
-                  <li class="mb-1">Tercatat di daftar donatur bulan berjalan via perintah <span class="cmd-badge">/donatur</span>.</li>
-                  <li><strong>Privasi Terjaga:</strong> Daftar donatur sengaja <strong>tidak menampilkan nominal rupiah</strong> yang didonasikan demi kenyamanan bersama.</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 9. Status Sahabat Dermawan -->
-        <section class="docs-section" id="item-vip">
-          <h2 class="section-heading"><i class="fa-solid fa-crown"></i> Apresiasi &amp; Status Sahabat Dermawan</h2>
-
-          <div class="table-responsive">
-            <table class="table table-bordered">
-              <thead>
-                <tr>
-                  <th>Fitur &amp; Manfaat</th>
-                  <th>👤 Pengguna Umum</th>
-                  <th>💖 Sahabat Dermawan</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Unduhan Media</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Catat Keuangan Teks (AI)</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Scan Foto Struk (AI)</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                  <td><strong class="text-success">100% GRATIS (0 Koin)</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Badge Profil Akun</strong></td>
-                  <td>👤 Pengguna Aktif</td>
-                  <td><strong class="text-danger">💖 Sahabat Dermawan</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Daftar Donatur Bulanan</strong></td>
-                  <td>-</td>
-                  <td><strong class="text-primary">Tercatat di /donatur</strong></td>
-                </tr>
-                <tr>
-                  <td><strong>Prioritas Antrean Server</strong></td>
-                  <td>Standar Cepat</td>
-                  <td><strong class="text-success">Prioritas Tinggi</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <!-- 10. Daftar Perintah Lengkap (Cheatsheet) -->
+        <!-- 7. Daftar Perintah Lengkap (Cheatsheet) -->
         <section class="docs-section" id="item-cheatsheet">
           <h2 class="section-heading"><i class="fa-solid fa-list-check"></i> Daftar Perintah Lengkap (Cheatsheet)</h2>
           <p class="text-muted small">
@@ -855,7 +629,7 @@
                 <tr>
                   <td><span class="badge bg-success">Dukungan</span></td>
                   <td><span class="cmd-badge">/donatur</span></td>
-                  <td>Lihat daftar donatur &amp; sahabat dermawan bulan ini (tanpa nominal)</td>
+                  <td>Lihat daftar donatur bulan ini (tanpa nominal)</td>
                 </tr>
                 <tr>
                   <td><span class="badge bg-success">Keuangan</span></td>
@@ -890,7 +664,7 @@
                 <tr>
                   <td><span class="badge bg-warning text-dark">Games</span></td>
                   <td><span class="cmd-badge">/tebakgambar</span></td>
-                  <td>Memulai tebak teka-teki gambar visual BochilTeam</td>
+                  <td>Memulai tebak teka-teki gambar visual interaktif</td>
                 </tr>
                 <tr>
                   <td><span class="badge bg-warning text-dark">Games</span></td>
@@ -922,152 +696,93 @@
           </div>
         </section>
 
-        <!-- 11. Aturan Penggunaan Bot -->
+        <!-- 8. Dukungan Sukarela (QRIS) & Donatur -->
+        <section class="docs-section" id="item-topup">
+          <h2 class="section-heading"><i class="fa-solid fa-hand-holding-heart"></i> Dukungan Sukarela (QRIS) &amp; Donatur</h2>
+          <div class="card border rounded-3 p-3 shadow-none bg-light">
+            <h3 class="h6 fw-bold mb-2 text-primary"><i class="fa-solid fa-qrcode me-2"></i> Partisipasi Operasional Server</h3>
+            <p class="small text-muted mb-2">
+              Layanan bot beroperasi 100% gratis. Untuk membantu biaya server dan bandwidth, Anda dapat berdonasi sukarela via QRIS:
+            </p>
+            <ul class="small text-muted mb-0 ps-3">
+              <li class="mb-1">Ketik <span class="cmd-badge">/dukung</span> atau <span class="cmd-badge">/donasi</span> untuk scan QRIS dengan nominal bebas via e-Wallet / m-Banking.</li>
+              <li>Ketik <span class="cmd-badge">/donatur</span> untuk melihat daftar apresiasi donatur bulan ini (privasi terjaga tanpa menampilkan nominal rupiah).</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 9. Ketentuan, Tanya Jawab & Bantuan -->
         <section class="docs-section" id="item-rules">
-          <h2 class="section-heading"><i class="fa-solid fa-gavel"></i> Aturan / Rules Penggunaan Bot</h2>
-          <ol>
-            <li><strong>Dilarang Melakukan Spam:</strong> Dilarang mengirimkan permintaan beruntun secara berlebihan. Batas laju adalah 3 permintaan per 2.5 detik untuk menjaga kenyamanan seluruh pengguna.</li>
-            <li><strong>Dilarang Mengunduh Konten Asusila &amp; Ilegal:</strong> Dilarang keras mengunduh materi pornografi anak, ujaran kebencian SARA, kekerasan ekstrem, atau materi yang melanggar hukum perundang-undangan Republik Indonesia. Pelanggaran akan mengakibatkan pemblokiran akun permanen tanpa toleransi.</li>
-            <li><strong>Gunakan untuk Keperluan Pribadi:</strong> Bot ini hanya sebagai alat bantu utilitas pribadi. Pengguna bertanggung jawab penuh atas segala tindakan pengunduhan materi.</li>
-            <li><strong>Etika Masukan &amp; Laporan:</strong> Gunakan fitur <code>/saran</code> dan <code>/lapor</code> dengan kata-kata yang sopan, jelas, dan beretika.</li>
-          </ol>
-        </section>
+          <h2 class="section-heading"><i class="fa-solid fa-shield-halved"></i> Ketentuan &amp; Bantuan</h2>
 
-        <!-- 12. Legalitas & Disclaimer Hukum -->
-        <section class="docs-section" id="item-legal">
-          <h2 class="section-heading"><i class="fa-solid fa-shield-halved"></i> Disclaimer Hak Cipta &amp; Ketentuan Hukum</h2>
-
-          <div class="callout-block callout-block-danger">
-            <div class="callout-title">
-              <i class="fa-solid fa-copyright"></i> Penyangkalan Hak Cipta (DMCA Notice)
-            </div>
-            <p class="small mb-2">
-              <strong>Ivy Assistant Bot (@ivy_your_assistant_bot)</strong> beroperasi semata-mata sebagai perangkat lunak perantara teknis (<em>pass-through client</em>). Server kami <strong>TIDAK MENYIMPAN DAN TIDAK MENG-HOST KONTEN MEDIA BERHAK CIPTA APAPUN</strong> secara permanen di server (<em>Zero-Persistence Architecture</em>).
-            </p>
-            <p class="small mb-0">
-              Bot tidak berafiliasi dengan YouTube, Google, TikTok, Meta (Instagram/Facebook/Threads), X (Twitter), Reddit, Pinterest, atau Bstation. Semua merek dagang dan hak cipta media adalah milik sah masing-masing pencipta aslinya.
-            </p>
+          <!-- Aturan Inti -->
+          <div class="card border rounded-3 p-3 shadow-none mb-3">
+            <h3 class="h6 fw-bold mb-2"><i class="fa-solid fa-gavel text-primary me-2"></i> Aturan Penggunaan</h3>
+            <ul class="small text-muted mb-0 ps-3">
+              <li class="mb-1"><strong>Anti-Spam:</strong> Batas wajar 3 permintaan per 2.5 detik demi stabilitas layanan bagi seluruh pengguna.</li>
+              <li class="mb-1"><strong>Bebas Konten Asusila &amp; Ilegal:</strong> Dilarang keras mengunduh konten pornografi, ujaran kebencian, atau materi yang melanggar hukum RI.</li>
+              <li><strong>Privasi Terjamin:</strong> Server tidak menyimpan file unduhan maupun foto struk belanja Anda (langsung dihapus permanen seketika setelah terkirim).</li>
+            </ul>
           </div>
 
-          <p class="small">
-            Untuk membaca rincian lengkap mengenai batasan tanggung jawab hukum, prosedur permohonan takedown DMCA, dan kebijakan privasi data, silakan buka dokumen resmi kami:
-          </p>
-          <div class="d-flex flex-wrap gap-2">
-            <a href="terms.html" class="btn btn-outline-danger btn-sm rounded-pill px-3">
-              <i class="fa-solid fa-file-contract me-1"></i> Baca Ketentuan Layanan (Terms of Service)
-            </a>
-            <a href="privacy.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-              <i class="fa-solid fa-user-lock me-1"></i> Baca Kebijakan Privasi (Privacy Policy)
-            </a>
-          </div>
-        </section>
-
-        <!-- 13. FAQ (Pertanyaan yang Sering Diajukan) -->
-        <section class="docs-section" id="item-faq">
-          <h2 class="section-heading"><i class="fa-solid fa-circle-question"></i> Pertanyaan yang Sering Diajukan (FAQ)</h2>
-
-          <div class="accordion accordion-flush" id="faqAccordion">
+          <!-- FAQ Ringkas -->
+          <div class="accordion accordion-flush border rounded-3 mb-3" id="faqAccordion">
             <div class="accordion-item">
               <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
                   data-bs-target="#faq-1">
-                  Apakah bot ini benar-benar gratis selamanya?
+                  Apakah bot ini benar-benar 100% gratis selamanya?
                 </button>
               </h3>
               <div id="faq-1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Ya, 100% GRATIS SELAMANYA! Seluruh fitur unduhan media dan pencatatan keuangan AI bebas digunakan tanpa potongan koin dan tanpa langganan wajib. Bot ini dikelola secara independen berbasis komunitas.
+                <div class="accordion-body small text-muted">
+                  Ya, 100% gratis berbasis komunitas. Seluruh fitur unduhan media dan pencatatan keuangan AI bebas digunakan tanpa potongan koin dan tanpa langganan berbayar.
                 </div>
               </div>
             </div>
 
             <div class="accordion-item">
               <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
                   data-bs-target="#faq-2">
-                  Bagaimana cara menyampaikan saran fitur atau melaporkan link error?
+                  Bagaimana jika file video yang diunduh berukuran lebih dari 50MB?
                 </button>
               </h3>
               <div id="faq-2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Cukup ketik perintah <code>/saran</code> untuk memberikan ide/request fitur baru, atau <code>/lapor</code> jika menemukan tautan yang gagal diunduh atau fitur rusak. Masukan Anda akan langsung diteruskan ke panel developer Telegram, dan Anda akan menerima notifikasi saat masukan dibaca, diselesaikan, atau dibalas langsung oleh pengembang.
+                <div class="accordion-body small text-muted">
+                  Telegram Bot API membatasi unggahan berkas maksimal 50MB. Jika melebihi batas tersebut, bot otomatis menyediakan opsi <strong>🎧 Unduh Audio MP3 Saja</strong> agar Anda tetap dapat menikmati isinya.
                 </div>
               </div>
             </div>
 
             <div class="accordion-item">
               <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
                   data-bs-target="#faq-3">
-                  Apakah video TikTok yang diunduh bebas dari watermark?
-                </button>
-              </h3>
-              <div id="faq-3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Ya, seluruh video TikTok yang diunduh melalui bot ini bersih tanpa watermark logo TikTok (<em>No Watermark</em>) dengan resolusi asli terbaik.
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#faq-4">
-                  Bagaimana aturan permainan Tic Tac Toe 3-Bidak?
-                </button>
-              </h3>
-              <div id="faq-4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Pada papan 3x3, masing-masing pemain maksimal hanya dapat memiliki 3 bidak. Pada langkah ke-4 dan seterusnya, bidak tertua pemain akan otomatis dihapus untuk memberi tempat bagi bidak baru (FIFO). Aturan ini menjamin permainan selalu dinamis dan bebas dari hasil seri (remis)!
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#faq-5">
                   Apakah data catatan keuangan dan foto struk saya aman?
                 </button>
               </h3>
-              <div id="faq-5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Sangat aman. Foto struk belanja diproses langsung di memori sementara (<em>zero-persistence</em>) dan langsung dibuang tanpa disimpan di storage server. Catatan keuangan pribadi hanya dapat diakses oleh Anda sendiri di ruang obrolan pribadi dengan bot.
-                </div>
-              </div>
-            </div>
-
-            <div class="accordion-item">
-              <h3 class="accordion-header">
-                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                  data-bs-target="#faq-6">
-                  Mengapa nominal donasi di /donatur tidak ditampilkan?
-                </button>
-              </h3>
-              <div id="faq-6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
-                <div class="accordion-body">
-                  Demi kenyamanan, privasi, dan menjaga kerendahan hati seluruh sahabat dermawan, bot sengaja tidak menampilkan nominal rupiah donasi. Semua kontribusi sukarela dihargai setara sebagai bentuk dukungan terhadap kelangsungan bot.
+              <div id="faq-3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body small text-muted">
+                  Sangat aman. Foto struk belanja diproses sementara dan langsung dihapus permanen tanpa disimpan di server. Catatan keuangan Anda bersifat privat dan hanya dapat diakses oleh Anda sendiri di ruang chat bot.
                 </div>
               </div>
             </div>
           </div>
-        </section>
 
-        <!-- 14. Kontak Administrator -->
-        <section class="docs-section" id="item-contact">
-          <h2 class="section-heading"><i class="fa-solid fa-envelope-open-text"></i> Kontak &amp; Dukungan Administrator</h2>
-          <p>
-            Punya pertanyaan atau ingin berkolaborasi? Hubungi kami langsung melalui saluran resmi berikut:
-          </p>
-
-          <div class="card border rounded-3 p-4 shadow-none">
-            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
-              <div>
-                <h3 class="h6 fw-bold mb-1"><i class="fa-brands fa-telegram text-primary me-2"></i> Telegram Customer Service</h3>
-                <p class="small text-muted mb-0">Aktif setiap hari untuk melayani bantuan teknis dan verifikasi donasi sukarela bot.</p>
+          <!-- Legal & Kontak Admin -->
+          <div class="card border rounded-3 p-3 shadow-none bg-light">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+              <div class="d-flex flex-wrap gap-2">
+                <a href="terms.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                  <i class="fa-solid fa-file-contract me-1"></i> Ketentuan Layanan (ToS)
+                </a>
+                <a href="privacy.html" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                  <i class="fa-solid fa-user-lock me-1"></i> Kebijakan Privasi
+                </a>
               </div>
-              <a target="_blank" href="https://t.me/kodokkayang" class="btn btn-primary rounded-pill px-4">
-                <i class="fa-solid fa-paper-plane me-1"></i> Chat Admin (@kodokkayang)
+              <a target="_blank" href="https://t.me/kodokkayang" class="btn btn-primary btn-sm rounded-pill px-3">
+                <i class="fa-brands fa-telegram me-1"></i> Bantuan Admin (@kodokkayang)
               </a>
             </div>
           </div>
