@@ -60,13 +60,33 @@ html {
   scroll-padding-top: 85px;
 }
 
+/* Metric-matched fallback font to eliminate font-swap layout shift (CLS) */
+@font-face {
+  font-family: 'Poppins-Fallback';
+  src: local('Segoe UI'), local('Arial'), local('Helvetica Neue');
+  ascent-override: 95%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+  size-adjust: 104%;
+}
+
 body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Poppins', 'Poppins-Fallback', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--text-main);
   background-color: var(--bg-body);
   line-height: 1.7;
   overflow-x: hidden;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Icon layout stability to prevent shifts during asynchronous icon load */
+.fa-solid,
+.fa-regular,
+.fa-brands,
+.fa-fw {
+  display: inline-block;
+  min-width: 1em;
+  text-align: center;
 }
 
 h1,
@@ -139,7 +159,11 @@ a:hover {
 }
 
 .site-logo .logo-text .text-alt {
-  color: var(--primary-color);
+  color: #0284c7;
+}
+
+[data-theme="dark"] .site-logo .logo-text .text-alt {
+  color: #38bdf8;
 }
 
 .status-badge {
@@ -147,13 +171,17 @@ a:hover {
   align-items: center;
   gap: 6px;
   background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
+  color: #047857;
   border: 1px solid rgba(16, 185, 129, 0.3);
   padding: 4px 12px;
   border-radius: 9999px;
   font-size: 0.8rem;
   font-weight: 600;
   margin-left: 16px;
+}
+
+[data-theme="dark"] .status-badge {
+  color: #34d399;
 }
 
 .status-dot {
@@ -213,14 +241,19 @@ a:hover {
 
 .search-btn {
   position: absolute;
-  left: 10px;
+  left: 6px;
   top: 50%;
   transform: translateY(-50%);
   background: none;
   border: none;
   color: var(--text-muted);
   font-size: 0.85rem;
-  padding: 0;
+  padding: 6px 8px;
+  min-width: 28px;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
 }
 
@@ -360,10 +393,14 @@ a:hover {
 
 .docs-nav .nav-link.active {
   background: rgba(36, 161, 222, 0.12);
-  color: var(--primary-color);
+  color: #0369a1;
   font-weight: 600;
   border-left: 3px solid var(--primary-color);
   border-radius: 0 8px 8px 0;
+}
+
+[data-theme="dark"] .docs-nav .nav-link.active {
+  color: #38bdf8;
 }
 
 .docs-content {
@@ -385,7 +422,9 @@ a:hover {
 .docs-heading {
   font-size: 2.2rem;
   font-weight: 700;
+  line-height: 1.25;
   margin-bottom: 10px;
+  min-height: 48px;
 }
 
 .docs-time {
@@ -401,6 +440,7 @@ a:hover {
   font-size: 1.12rem;
   color: var(--text-main);
   line-height: 1.8;
+  min-height: 80px;
 }
 
 .hero-box {
@@ -410,6 +450,7 @@ a:hover {
   padding: 28px;
   margin: 25px 0 35px 0;
   box-shadow: 0 4px 15px rgba(36, 161, 222, 0.08);
+  contain: layout style;
 }
 
 .hero-feature-pill {
@@ -633,7 +674,7 @@ a:hover {
 code {
   font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
   background: var(--bg-subtle);
-  color: #d946ef;
+  color: #a21caf;
   padding: 2px 7px;
   border-radius: 6px;
   font-size: 0.88em;
@@ -652,7 +693,7 @@ code {
   align-items: center;
   gap: 6px;
   background: rgba(36, 161, 222, 0.08);
-  color: #0284c7;
+  color: #0369a1;
   padding: 3px 9px;
   border-radius: 6px;
   font-size: 0.84rem;
@@ -789,6 +830,14 @@ code {
   background: var(--primary-color);
   color: #ffffff;
   transform: translateY(-2px);
+}
+
+.footer a.fw-semibold {
+  color: #0369a1;
+}
+
+[data-theme="dark"] .footer a.fw-semibold {
+  color: #38bdf8;
 }
 
 /* ===================================================================
